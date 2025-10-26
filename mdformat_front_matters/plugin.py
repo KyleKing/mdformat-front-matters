@@ -11,7 +11,7 @@ from mdformat.renderer import RenderContext, RenderTreeNode
 from mdformat.renderer.typing import Postprocess, Render
 
 from ._formatters import JSONFormatter, TOMLFormatter, YAMLFormatter
-from ._helpers import DuplicateKeyError
+from ._helpers import DuplicateKeyError, should_sort_keys
 from .mdit_plugins import front_matters_plugin
 
 LOGGER = logging.getLogger(__name__)
@@ -23,8 +23,11 @@ def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
     Stored in `mdit.options["mdformat"]["plugin"]["front_matters"]`
 
     """
-    # No CLI arguments needed for now
-    # Future options could include: --no-format-frontmatter, --yaml-style, etc.
+    group.add_argument(
+        "--no-sort-keys",
+        action="store_true",
+        help="Disable automatic sorting of keys in TOML and JSON front matter",
+    )
 
 
 def update_mdit(mdit: MarkdownIt) -> None:
@@ -32,15 +35,18 @@ def update_mdit(mdit: MarkdownIt) -> None:
     mdit.use(front_matters_plugin)
 
 
-def _render_front_matter(node: RenderTreeNode, _context: RenderContext) -> str:
+def _render_front_matter(node: RenderTreeNode, context: RenderContext) -> str:
     """Render a front matter block.
 
     Args:
         node: The syntax tree node representing the front matter.
-        _context: The rendering context (unused).
+        context: The rendering context.
 
     Returns:
         Formatted front matter block with appropriate delimiters.
+
+    Raises:
+        DuplicateKeyError: If duplicate keys are detected during formatting.
 
     """
     # Get the format type from node metadata
@@ -48,14 +54,17 @@ def _render_front_matter(node: RenderTreeNode, _context: RenderContext) -> str:
     content = node.content
     markup = node.markup
 
+    # Get sorting configuration
+    sort_keys = should_sort_keys(context.options)
+
     # Format the content based on type
     try:
         if format_type == "yaml":
             formatted_content = YAMLFormatter.format(content)
         elif format_type == "toml":
-            formatted_content = TOMLFormatter.format(content)
+            formatted_content = TOMLFormatter.format(content, sort_keys=sort_keys)
         elif format_type == "json":
-            formatted_content = JSONFormatter.format(content)
+            formatted_content = JSONFormatter.format(content, sort_keys=sort_keys)
         else:
             # Unknown format, return as-is
             formatted_content = content
