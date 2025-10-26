@@ -54,7 +54,7 @@ md.render(text)
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/kyleking/mdformat-front-matters/blob/main/CONTRIBUTING.md)
+See [CONTRIBUTING.md](https://github.com/kyleking/mdformat-front-matters/blob/main/CONTRIBUTING.md) and [Repository Guidelines](./AGENTS.md).
 
 [ci-badge]: https://github.com/kyleking/mdformat-front-matters/workflows/CI/badge.svg?branch=main
 [ci-link]: https://github.com/kyleking/mdformat-front-matters/actions?query=workflow%3ACI+branch%3Amain+event%3Apush
