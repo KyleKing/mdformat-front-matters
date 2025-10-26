@@ -88,6 +88,7 @@ class TOMLFormatter:
             assert cls._loads_fn is not None
             assert cls._dumps_fn is not None
             parsed = cls._loads_fn(content)
+            parsed = cls._sort_dict_recursive(parsed)
             formatted = cls._dumps_fn(parsed)
             # tomli-w uses space in datetimes, but TOML spec prefers T
             # Replace datetime spaces with T for better compatibility
@@ -98,6 +99,23 @@ class TOMLFormatter:
         else:
             # Remove trailing newline if present
             return formatted.rstrip("\n")
+
+    @staticmethod
+    def _sort_dict_recursive(data: Any) -> Any:
+        """Recursively sort dictionaries by their keys.
+
+        Args:
+            data: Data structure to sort (can be dict, list, or other types).
+
+        Returns:
+            Sorted data structure with all nested dicts sorted by keys.
+
+        """
+        if isinstance(data, dict):
+            return {k: TOMLFormatter._sort_dict_recursive(v) for k, v in sorted(data.items())}
+        if isinstance(data, list):
+            return [TOMLFormatter._sort_dict_recursive(item) for item in data]
+        return data
 
     @staticmethod
     def _normalize_datetimes(toml_str: str) -> str:
@@ -156,4 +174,4 @@ class JSONFormatter:
             # If formatting fails, return original content
             return content
         else:
-            return json.dumps(parsed, indent=2, ensure_ascii=False)
+            return json.dumps(parsed, indent=2, ensure_ascii=False, sort_keys=True)
