@@ -11,7 +11,6 @@ from mdformat.renderer import RenderContext, RenderTreeNode
 from mdformat.renderer.typing import Postprocess, Render
 
 from ._formatters import JSONFormatter, TOMLFormatter, YAMLFormatter
-from ._helpers import DuplicateKeyError
 from .mdit_plugins import front_matters_plugin
 
 LOGGER = logging.getLogger(__name__)
@@ -59,9 +58,6 @@ def _render_front_matter(node: RenderTreeNode, _context: RenderContext) -> str:
         else:
             # Unknown format, return as-is
             formatted_content = content
-    except DuplicateKeyError:
-        # Re-raise duplicate key errors - we want these to be strict
-        raise
     except Exception as e:
         LOGGER.warning(
             "Failed to format %s front matter: %s. Returning original content.",
