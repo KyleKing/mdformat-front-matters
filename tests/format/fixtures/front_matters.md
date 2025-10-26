@@ -144,9 +144,9 @@ author = "John Smith"
 Hugo uses TOML front matter with nested tables.
 .
 +++
+title = "Example"
 date = 2024-02-02T04:14:54-08:00
 draft = false
-title = "Example"
 weight = 10
 
 [params]
@@ -200,13 +200,13 @@ TODO: Format Hugo JSON front matter example
 Hugo uses JSON front matter with nested objects.
 .
 {
+  "title": "Example",
   "date": "2024-02-02T04:14:54-08:00",
   "draft": false,
+  "weight": 10,
   "params": {
     "author": "John Smith"
-  },
-  "title": "Example",
-  "weight": 10
+  }
 }
 
 # Example Headline
@@ -350,6 +350,20 @@ level = "debug"
 # Content
 .
 +++
+[server]
+host = "example.com"
+port = 8080
+
+[server.ssl]
+enabled = true
+cert = "/path/to/cert"
+
+[server.ssl.options]
+min_version = "TLSv1.2"
+ciphers = [
+    "ECDHE-RSA-AES256-GCM-SHA384",
+]
+
 [database]
 driver = "postgres"
 
@@ -358,28 +372,14 @@ host = "db1.example.com"
 port = 5432
 
 [database.primary.pool]
-max_connections = 20
 min_connections = 5
+max_connections = 20
 
 [logging]
 handlers = [
-    { path = "/var/log/app.log", type = "file" },
-    { level = "debug", type = "console" },
+    { type = "file", path = "/var/log/app.log" },
+    { type = "console", level = "debug" },
 ]
-
-[server]
-host = "example.com"
-port = 8080
-
-[server.ssl]
-cert = "/path/to/cert"
-enabled = true
-
-[server.ssl.options]
-ciphers = [
-    "ECDHE-RSA-AES256-GCM-SHA384",
-]
-min_version = "TLSv1.2"
 +++
 
 # Content
@@ -706,32 +706,32 @@ tags = ["production", "critical", "monitored"]
 # Content
 .
 +++
-description = "Large configuration file for testing"
-servers = [
-    { datacenter = "us-east-1", hostname = "server001.example.com", ip = "192.168.1.1" },
-    { datacenter = "us-east-1", hostname = "server002.example.com", ip = "192.168.1.2" },
-    { datacenter = "us-west-1", hostname = "server003.example.com", ip = "192.168.1.3" },
-    { datacenter = "us-west-1", hostname = "server004.example.com", ip = "192.168.1.4" },
-    { datacenter = "eu-central-1", hostname = "server005.example.com", ip = "192.168.1.5" },
-]
-services = [
-    { enabled = true, name = "service_001", port = 8001 },
-    { enabled = true, name = "service_002", port = 8002 },
-    { enabled = false, name = "service_003", port = 8003 },
-    { enabled = true, name = "service_004", port = 8004 },
-    { enabled = true, name = "service_005", port = 8005 },
-]
 version = "1.0.0"
+description = "Large configuration file for testing"
+services = [
+    { name = "service_001", enabled = true, port = 8001 },
+    { name = "service_002", enabled = true, port = 8002 },
+    { name = "service_003", enabled = false, port = 8003 },
+    { name = "service_004", enabled = true, port = 8004 },
+    { name = "service_005", enabled = true, port = 8005 },
+]
+servers = [
+    { hostname = "server001.example.com", ip = "192.168.1.1", datacenter = "us-east-1" },
+    { hostname = "server002.example.com", ip = "192.168.1.2", datacenter = "us-east-1" },
+    { hostname = "server003.example.com", ip = "192.168.1.3", datacenter = "us-west-1" },
+    { hostname = "server004.example.com", ip = "192.168.1.4", datacenter = "us-west-1" },
+    { hostname = "server005.example.com", ip = "192.168.1.5", datacenter = "eu-central-1" },
+]
 
 [metadata]
-author = "System Administrator"
 created = 2024-01-01T00:00:00+00:00
+updated = 2024-12-31T23:59:59+00:00
+author = "System Administrator"
 tags = [
     "production",
     "critical",
     "monitored",
 ]
-updated = 2024-12-31T23:59:59+00:00
 +++
 
 # Content
