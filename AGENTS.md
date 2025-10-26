@@ -1,39 +1,56 @@
 # AI Contributor Guide
 
-## Project Snapshot
+## Project Overview
 
-- mdformat plugin that formats front matter blocks for CommonMark documents
-- Plugin surface in `mdformat_front_matters/` (`__init__.py`, `plugin.py`, `_helpers.py`)
-- Tests live in `tests/` with behavior suites in `format/` and `render/`, shared helpers in `tests/helpers.py`
+- mdformat plugin that normalizes YAML/TOML front matter blocks for CommonMark documents.
+- Primary code lives in `mdformat_front_matters/` (`__init__.py`, `plugin.py`, `_helpers.py`); tests reside under `tests/` with behavior fixtures in `format/` and `render/`.
+
+## Setup Commands
+
+- Create a virtualenv: `python -m venv .venv && source .venv/bin/activate`
+- Install the project with extras: `pip install -e ".[test]"`
+- Reuse `tox -p auto` for all defined environments when you need a clean sweep.
+
+## Build & Test Commands
+
+- Run full test + coverage: `tox -e py312-test`
+- Target a suite: `pytest tests/format/test_format.py -vv --cov=mdformat_front_matters`
+- Lint + format: `tox -e py312-ruff` (or `ruff check . --fix` / `ruff format .`)
+- Type checking: `tox -e py312-type` or `mypy mdformat_front_matters`
+- Pre-commit hooks: `tox -e py312-pre-commit`
+- Rapid loop: `ptw .` leverages the pytest-watcher defaults from `tool.pytest-watcher`
 
 ## Key Interfaces & Architecture
 
-- Entry points declared in `pyproject.toml` under `mdformat.parser_extension`
-- `mdformat_front_matters.__all__` exports `update_mdit`, `RENDERERS`, `POSTPROCESSORS`, `add_cli_argument_group`
-- Implement a markdown-it plugin (`front_matters_plugin`) and register it via `update_mdit`
-- Renderer/postprocessor callables must use snake_case token-type names; keep supporting utilities beside the plugin so Flit packages them
-- Retrieve plugin configuration with `_helpers.get_conf(context.options, "key")` to support CLI, API, and TOML sources
+- Entry point declared in `pyproject.toml` under `mdformat.parser_extension`.
+- `mdformat_front_matters.__all__` exports `update_mdit`, `RENDERERS`, `POSTPROCESSORS`, and `add_cli_argument_group`.
+- The markdown-it plugin (`front_matters_plugin`) is registered via `update_mdit`; renderer/postprocessor callables must use snake_case token names.
+- Retrieve plugin configuration via `_helpers.get_conf(context.options, "key")` so CLI, API, and pyproject sources stay consistent.
 
-## Workflow Cheatsheet
+## Code Style Guidelines
 
-- Tests & coverage: `tox -e py312-test`; targeted run `pytest tests/format/test_format.py -vv`
-- Lint/format: `tox -e py312-ruff`; direct `ruff check . --fix` and `ruff format .`
-- Typing: `tox -e py312-type` or `mypy mdformat_front_matters`
-- Pre-commit stack: `tox -e py312-pre-commit`; run all envs with `tox -p auto`
-- Rapid feedback: `ptw .` leverages pytest-watcher defaults
+- Python ≥3.9, four-space indentation, Ruff-enforced 88-character lines.
+- Prefer Google-style docstrings with explicit typing; keep public exports declared in `__all__`.
+- Align renderer mappings with the markdown-it token names and keep helper utilities co-located so Flit packages them.
 
-## Testing Expectations
+## Testing Instructions
 
-- Use pytest with beartype; name modules and functions `test_*`
-- Parser fixtures live in `tests/format/fixtures/`, renderer snapshots in `tests/render/fixtures/`
-- Add regression examples before fixes and keep `pytest --cov=mdformat_front_matters` stable across changes
+- Use pytest with beartype; name new modules/functions `test_*`.
+- Parser fixtures live in `tests/format/fixtures/`, renderer snapshots in `tests/render/fixtures/`, shared helpers in `tests/helpers.py`.
+- Add regression fixtures before fixes and keep `pytest --cov=mdformat_front_matters` coverage stable.
 
-## Coding Standards
+## Security Considerations
 
-- Python ≥3.9, four-space indentation, Ruff-enforced 88-character lines
-- Prefer Google-style docstrings with explicit typing
-- Export public symbols via `__all__` in `__init__.py`; ensure renderer mappings stay in sync with markdown-it token names
+- Never embed real secrets or production front matter in fixtures; sanitize sample metadata.
+- The formatter should stay purely deterministic—avoid introducing network access, file writes outside the workspace, or dynamic code execution.
+- Validate front matter parsing defensively and prefer schema checks or graceful fallbacks over raising uncaught exceptions.
+
+## Additional Instructions
+
+- Run lint, type, and test tox environments before submitting patches; refresh README examples when CLI or formatter behavior changes.
+- Document noteworthy behavior changes in the README (or upcoming release notes) and keep CLI argument docs in sync.
+- For pull requests, include a brief summary of coverage impact and mention any new configuration keys added via `_helpers.get_conf`.
 
 ## Release & Packaging
 
-- Do not release automatically
+- Distributions are managed with Flit; do not publish from agent sessions.
