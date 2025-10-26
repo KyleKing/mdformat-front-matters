@@ -4,16 +4,20 @@ from __future__ import annotations
 
 import json
 import sys
-from typing import TYPE_CHECKING, Any
+import types
+from typing import TYPE_CHECKING, Any, TypeVar
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+T = TypeVar("T")
 
 
 class YAMLFormatter:
     """Lazy-loaded YAML formatter using yamlfix."""
 
     _format_fn: Callable[[str], str] | None = None
+    _yaml_module: types.ModuleType | None = None
 
     @classmethod
     def format(cls, content: str) -> str:
@@ -101,7 +105,7 @@ class TOMLFormatter:
             return formatted.rstrip("\n")
 
     @staticmethod
-    def _sort_dict_recursive(data: Any) -> Any:
+    def _sort_dict_recursive(data: T) -> T:
         """Recursively sort dictionaries by their keys.
 
         Args:
@@ -112,9 +116,12 @@ class TOMLFormatter:
 
         """
         if isinstance(data, dict):
-            return {k: TOMLFormatter._sort_dict_recursive(v) for k, v in sorted(data.items())}
+            return {
+                k: TOMLFormatter._sort_dict_recursive(v)
+                for k, v in sorted(data.items())
+            }  # type: ignore[return-value]
         if isinstance(data, list):
-            return [TOMLFormatter._sort_dict_recursive(item) for item in data]
+            return [TOMLFormatter._sort_dict_recursive(item) for item in data]  # type: ignore[return-value]
         return data
 
     @staticmethod
