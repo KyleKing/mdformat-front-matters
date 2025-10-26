@@ -16,10 +16,10 @@ T = TypeVar("T")
 
 
 class YAMLFormatter:
-    """Lazy-loaded YAML formatter using PyYAML."""
+    """Lazy-loaded YAML formatter using yamlfix."""
 
+    _format_fn: Callable[[str], str] | None = None
     _yaml_module: types.ModuleType | None = None
-    _dumper_class: type | None = None
 
     @classmethod
     def format(cls, content: str) -> str:
@@ -32,50 +32,32 @@ class YAMLFormatter:
             Formatted YAML string.
 
         """
-        if cls._yaml_module is None or cls._dumper_class is None:
+        if cls._format_fn is None or cls._yaml_module is None:
             cls._load_formatter()
 
         # First, check for duplicate keys
         cls._check_duplicate_keys(content)
 
         try:
-            assert cls._yaml_module is not None
-            # Parse and re-dump to format
-            parsed = cls._yaml_module.safe_load(content)
-
-            # Handle empty/null content
-            if parsed is None or (isinstance(parsed, str) and not parsed.strip()):
-                return "null"
-
-            # Dump with specific formatting options for consistency
-            # Note: sort_keys=False to preserve original key order (YAML is not sorted)
-            assert cls._dumper_class is not None
-            formatted = cls._yaml_module.dump(
-                parsed,
-                Dumper=cls._dumper_class,
-                default_flow_style=False,
-                allow_unicode=True,
-                sort_keys=False,
-                explicit_start=False,
-                explicit_end=False,
-                width=80,  # Wrap lines at 80 characters for readability
-            )
-
+            # yamlfix.fix_code returns formatted YAML
+            assert cls._format_fn is not None
+            formatted = cls._format_fn(content)
+            # yamlfix adds a YAML document start marker (---), remove it
+            if formatted.startswith("---\n"):
+                formatted = formatted[4:]
+            elif formatted.startswith("--- "):
+                # Handle scalar values like "--- Foo\n...\n"
+                formatted = formatted[4:]
             # Remove YAML document end marker (...) if present
             if formatted.endswith("\n...\n"):
                 formatted = formatted[:-5]
             elif formatted.endswith("\n..."):
                 formatted = formatted[:-4]
-
-            # Normalize datetime formatting to use T instead of space
-            formatted = cls._normalize_datetimes(formatted)
-
-            # Convert | to |- for block scalars that should strip trailing newlines
-            # This is a workaround for PyYAML not supporting |- directly
-            formatted = cls._fix_block_scalar_chomping(formatted)
-
             # Remove trailing newline if present
             formatted = formatted.rstrip("\n")
+            # Handle empty content (YAML represents it as null)
+            if not formatted.strip():
+                return "null"
         except Exception:
             # If formatting fails, return original content
             return content
@@ -123,124 +105,14 @@ class YAMLFormatter:
             # If YAML parsing fails for other reasons, let the formatter handle it
             pass
 
-    @staticmethod
-    def _fix_block_scalar_chomping(yaml_str: str) -> str:
-        """Fix block scalar chomping indicators.
-
-        PyYAML doesn't properly support |- for block scalars without trailing newlines.
-        This method detects such cases and converts | to |-.
-
-        Args:
-            yaml_str: YAML string with block scalars.
-
-        Returns:
-            YAML string with corrected chomping indicators.
-
-        """
-        # Pattern: key: | followed by indented lines, ending with non-empty line
-        # We need to replace | with |- if the last line has content (not just whitespace)
-        # This is tricky because we need to look ahead to see the content
-
-        # Simpler approach: detect `: |\n` followed by content that ends with
-        # a line that isn't blank (before the next key or end of block)
-        lines = yaml_str.split("\n")
-        result_lines = []
-        i = 0
-        while i < len(lines):
-            line = lines[i]
-            # Check if this line ends with ': |'
-            if line.rstrip().endswith(": |"):
-                # Look ahead to see if we need |-
-                # Find the indentation level of the block
-                base_indent = len(line) - len(line.lstrip())
-                # Collect the block lines
-                j = i + 1
-                block_lines = []
-                while j < len(lines):
-                    next_line = lines[j]
-                    # Check if this line is part of the block (more indented or empty)
-                    if next_line.strip() == "" or len(next_line) - len(next_line.lstrip()) > base_indent:
-                        block_lines.append(next_line)
-                        j += 1
-                    else:
-                        break
-                # Check if the last non-empty line should use |-
-                # (i.e., the original content didn't have a trailing newline)
-                # We added a newline, so the last line will be indented content
-                non_empty_lines = [l for l in block_lines if l.strip()]
-                if non_empty_lines and block_lines and block_lines[-1].strip() == "":
-                    # Last line is empty, but there are non-empty lines before it
-                    # This means we added a trailing newline - use |-
-                    result_lines.append(line.replace(": |", ": |-", 1))
-                else:
-                    result_lines.append(line)
-                result_lines.extend(block_lines)
-                i = j
-            else:
-                result_lines.append(line)
-                i += 1
-        return "\n".join(result_lines)
-
-    @staticmethod
-    def _normalize_datetimes(yaml_str: str) -> str:
-        """Normalize datetime formatting to use T instead of space.
-
-        Args:
-            yaml_str: YAML string with potential datetime values.
-
-        Returns:
-            YAML string with normalized datetime format.
-
-        """
-        import re  # noqa: PLC0415
-
-        # Match datetime patterns like "2024-02-02 04:14:54"
-        # and replace space with T
-        pattern = r"(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})"
-        return re.sub(pattern, r"\1T\2", yaml_str)
-
     @classmethod
     def _load_formatter(cls) -> None:
-        """Lazy-load the PyYAML library."""
+        """Lazy-load the yamlfix library."""
         import yaml  # type: ignore[import-untyped]  # noqa: PLC0415
+        import yamlfix  # noqa: PLC0415
 
         cls._yaml_module = yaml
-
-        # Create custom Dumper that uses block scalars for multiline strings
-        class BlockScalarDumper(yaml.SafeDumper):  # type: ignore[name-defined]
-            """Custom YAML dumper that prefers block scalars for multiline strings."""
-
-        def represent_str(dumper: yaml.SafeDumper, data: str) -> yaml.Node:  # type: ignore[name-defined]
-            """Represent strings using block scalars for multiline content."""
-            if "\n" in data:
-                # Choose block scalar style based on content
-                # Count internal newlines (excluding potential trailing newline)
-                internal_newlines = data.rstrip("\n").count("\n")
-
-                if internal_newlines == 0 and data.endswith("\n"):
-                    # Single line with trailing newline - use folded style
-                    style = ">"
-                    use_data = data
-                elif internal_newlines > 0 and not data.endswith("\n"):
-                    # Multiple lines without trailing newline
-                    # PyYAML won't use block scalars without trailing newline
-                    # Workaround: add newline, use |, mark for post-processing
-                    style = "|"
-                    use_data = data + "\n"
-                    node = dumper.represent_scalar("tag:yaml.org,2002:str", use_data, style=style)
-                    # Store marker in node for post-processing
-                    node.comment = ["STRIP"]  # type: ignore[attr-defined]
-                    return node
-                else:
-                    # Multiple lines with trailing newline - use literal style
-                    style = "|"
-                    use_data = data
-                return dumper.represent_scalar("tag:yaml.org,2002:str", use_data, style=style)
-            return dumper.represent_scalar("tag:yaml.org,2002:str", data)
-
-        # Register for both str types
-        BlockScalarDumper.add_representer(str, represent_str)
-        cls._dumper_class = BlockScalarDumper
+        cls._format_fn = yamlfix.fix_code
 
 
 class TOMLFormatter:
