@@ -3,13 +3,18 @@
 from __future__ import annotations
 
 import argparse
+import logging
 from collections.abc import Mapping
 
 from markdown_it import MarkdownIt
 from mdformat.renderer import RenderContext, RenderTreeNode
 from mdformat.renderer.typing import Postprocess, Render
 
+from ._formatters import JSONFormatter, TOMLFormatter, YAMLFormatter
+from ._helpers import DuplicateKeyError, should_sort_keys
 from .mdit_plugins import front_matters_plugin
+
+LOGGER = logging.getLogger(__name__)
 
 
 def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
@@ -19,28 +24,79 @@ def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
 
     """
     group.add_argument(
-        "--argument",
-        action="store_const",
-        const=True,
-        help="If specified, store true",
+        "--no-sort-keys",
+        action="store_true",
+        help="Disable automatic sorting of keys in TOML and JSON front matter",
     )
 
 
 def update_mdit(mdit: MarkdownIt) -> None:
-    """Update the parser."""
+    """Update the parser to recognize front matter blocks."""
     mdit.use(front_matters_plugin)
 
 
-def _render_front_matters(node: RenderTreeNode, context: RenderContext) -> str:
-    """Render a `RenderTreeNode`."""
-    return node.render(context)
+def _render_front_matter(node: RenderTreeNode, context: RenderContext) -> str:
+    """Render a front matter block.
+
+    Args:
+        node: The syntax tree node representing the front matter.
+        context: The rendering context.
+
+    Returns:
+        Formatted front matter block with appropriate delimiters.
+
+    Raises:
+        DuplicateKeyError: If duplicate keys are detected during formatting.
+
+    """
+    # Get the format type from node metadata
+    format_type = node.meta.get("format", "yaml") if node.meta else "yaml"
+    content = node.content
+    markup = node.markup
+
+    # Get sorting configuration
+    sort_keys = should_sort_keys(context.options)
+
+    # Format the content based on type
+    try:
+        if format_type == "yaml":
+            formatted_content = YAMLFormatter.format(content)
+        elif format_type == "toml":
+            formatted_content = TOMLFormatter.format(content, sort_keys=sort_keys)
+        elif format_type == "json":
+            formatted_content = JSONFormatter.format(content, sort_keys=sort_keys)
+        else:
+            # Unknown format, return as-is
+            formatted_content = content
+    except DuplicateKeyError:
+        # Re-raise duplicate key errors - we want these to be strict
+        raise
+    except Exception as e:
+        LOGGER.warning(
+            "Failed to format %s front matter: %s. Returning original content.",
+            format_type,
+            e,
+        )
+        formatted_content = content
+
+    # Ensure content ends with newline
+    if formatted_content and not formatted_content.endswith("\n"):
+        formatted_content += "\n"
+
+    # Build the output based on format
+    if format_type == "json":
+        # JSON front matter has no delimiters
+        # Return with single newline; mdformat will add separator
+        return formatted_content.rstrip("\n")
+    # YAML and TOML have delimiters
+    return f"{markup}\n{formatted_content}{markup}"
 
 
 # A mapping from syntax tree node type to a function that renders it.
 # This can be used to overwrite renderer functions of existing syntax
 # or add support for new syntax.
 RENDERERS: Mapping[str, Render] = {
-    "<placeholder>": _render_front_matters,
+    "front_matter": _render_front_matter,
 }
 
 # A mapping from `RenderTreeNode.type` to a `Postprocess` that does
