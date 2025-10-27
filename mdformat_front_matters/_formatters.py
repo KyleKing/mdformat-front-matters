@@ -2,7 +2,81 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import frontmatter  # type: ignore[import-untyped]
+
+
+def _strip_delimiters(formatted: str, delimiter: str) -> str:
+    """Strip delimiters from formatted front matter.
+
+    Args:
+        formatted: Formatted front matter with delimiters.
+        delimiter: The delimiter string (e.g., '---' or '+++').
+
+    Returns:
+        Front matter with delimiters removed and trailing newlines stripped.
+
+    """
+    formatted = formatted.removeprefix(f"{delimiter}\n")
+
+    # Remove trailing delimiter with or without final newline
+    end_with_nl = f"\n{delimiter}\n"
+    end_no_nl = f"\n{delimiter}"
+
+    if formatted.endswith(end_with_nl):
+        return formatted[: -len(end_with_nl)].rstrip("\n")
+    if formatted.endswith(end_no_nl):
+        return formatted[: -len(end_no_nl)].rstrip("\n")
+
+    return formatted.rstrip("\n")
+
+
+def _format_with_handler(
+    content: str,
+    handler: Any,  # frontmatter handler type  # noqa: ANN401
+    parse_wrapper: str,
+    delimiter: str | None = None,
+) -> str:
+    """Format front matter using a frontmatter handler.
+
+    Args:
+        content: Raw front matter content.
+        handler: The frontmatter handler (e.g., YAMLHandler, TOMLHandler).
+        parse_wrapper: Template string for wrapping content during parsing.
+        delimiter: Delimiter to strip (None for JSON which has special handling).
+
+    Returns:
+        Formatted front matter.
+
+    """
+    # Parse the content
+    metadata, _ = frontmatter.parse(
+        parse_wrapper.format(content=content),
+        handler=handler,
+    )
+
+    # Return empty string if no metadata
+    if not metadata:
+        return ""
+
+    # Create a post and dump back to formatted string
+    post = frontmatter.Post("", **metadata)
+    formatted = frontmatter.dumps(post, handler=handler)
+
+    # Strip delimiters based on format type
+    if delimiter:
+        return _strip_delimiters(formatted, delimiter)
+
+    # JSON special handling: extract inner content
+    if formatted.startswith("{\n") and formatted.endswith("\n}\n"):
+        lines = formatted.split("\n")
+        if len(lines) > 2:  # noqa: PLR2004
+            inner = "\n".join(lines[1:-2])
+            if inner.strip():
+                return f"{{\n{inner}\n}}"
+
+    return formatted.rstrip("\n")
 
 
 class YAMLFormatter:
@@ -20,38 +94,13 @@ class YAMLFormatter:
 
         """
         try:
-            # Parse the YAML content
-            metadata, _ = frontmatter.parse(f"---\n{content}\n---\n")
-
-            # If content is empty, return empty string
-            if not metadata:
-                return ""
-
-            # Create a post with the metadata
-            post = frontmatter.Post("", **metadata)
-
-            # Dump back to YAML (without the content part)
-            formatted = frontmatter.dumps(post, handler=frontmatter.YAMLHandler())
-
-            # Remove the document delimiters
-            formatted = formatted.removeprefix("---\n")
-
-            # Remove trailing dashes and newlines
-            if formatted.endswith("\n---\n"):
-                formatted = formatted[:-5]
-            elif formatted.endswith("\n---"):
-                formatted = formatted[:-4]
-
-            formatted = formatted.rstrip("\n")
-
-            # Handle empty result
-            if not formatted.strip():
-                return ""
-
-            return formatted  # noqa: TRY300
-
+            return _format_with_handler(
+                content,
+                frontmatter.YAMLHandler(),
+                "---\n{content}\n---\n",
+                "---",
+            )
         except Exception:
-            # If formatting fails, return original content
             return content
 
 
@@ -70,29 +119,13 @@ class TOMLFormatter:
 
         """
         try:
-            # Parse the TOML content
-            metadata, _ = frontmatter.parse(
-                f"+++\n{content}\n+++\n",
-                handler=frontmatter.TOMLHandler(),
+            return _format_with_handler(
+                content,
+                frontmatter.TOMLHandler(),
+                "+++\n{content}\n+++\n",
+                "+++",
             )
-
-            # Create a post with the metadata
-            post = frontmatter.Post("", **metadata)
-
-            # Dump back to TOML
-            formatted = frontmatter.dumps(post, handler=frontmatter.TOMLHandler())
-
-            # Remove the +++ delimiters
-            formatted = formatted.removeprefix("+++\n")
-            if formatted.endswith("\n+++\n"):
-                formatted = formatted[:-5]
-            elif formatted.endswith("\n+++"):
-                formatted = formatted[:-4]
-
-            return formatted.rstrip("\n")
-
         except Exception:
-            # If formatting fails, return original content
             return content
 
 
@@ -111,32 +144,11 @@ class JSONFormatter:
 
         """
         try:
-            # Parse the JSON content
-            metadata, _ = frontmatter.parse(
-                f"{content}\n",
-                handler=frontmatter.JSONHandler(),
+            return _format_with_handler(
+                content,
+                frontmatter.JSONHandler(),
+                "{content}\n",
+                None,  # JSON has no delimiters
             )
-
-            # Create a post with the metadata
-            post = frontmatter.Post("", **metadata)
-
-            # Dump back to JSON
-            formatted = frontmatter.dumps(post, handler=frontmatter.JSONHandler())
-
-            # Remove the outer braces and extract just the metadata
-            # python-frontmatter wraps JSON, we need just the inner content
-            if formatted.startswith("{\n") and formatted.endswith("\n}\n"):
-                # Extract lines between first and last brace
-                lines = formatted.split("\n")
-                if len(lines) > 2:  # noqa: PLR2004
-                    # Remove first/last lines (braces + newline)
-                    inner = "\n".join(lines[1:-2])
-                    if inner.strip():
-                        return f"{{\n{inner}\n}}"
-
-            # Fallback: return formatted as-is without trailing newline
-            return formatted.rstrip("\n")
-
         except Exception:
-            # If formatting fails, return original content
             return content

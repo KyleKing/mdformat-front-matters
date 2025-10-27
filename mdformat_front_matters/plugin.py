@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import logging
 from collections.abc import Mapping
 
 from markdown_it import MarkdownIt
@@ -12,8 +11,6 @@ from mdformat.renderer.typing import Postprocess, Render
 
 from ._formatters import JSONFormatter, TOMLFormatter, YAMLFormatter
 from .mdit_plugins import front_matters_plugin
-
-LOGGER = logging.getLogger(__name__)
 
 
 def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
