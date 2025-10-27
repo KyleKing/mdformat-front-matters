@@ -15,7 +15,7 @@ def _strip_delimiters(formatted: str, delimiter: str) -> str:
         delimiter: The delimiter string (e.g., '---' or '+++').
 
     Returns:
-        Front matter with delimiters, comments, and trailing newlines removed.
+        Front matter with delimiters removed and trailing newlines stripped.
 
     """
     formatted = formatted.removeprefix(f"{delimiter}\n")
@@ -79,76 +79,64 @@ def _format_with_handler(
     return formatted.rstrip("\n")
 
 
-class YAMLFormatter:
-    """YAML formatter using python-frontmatter."""
+def format_yaml(content: str) -> str:
+    """Format YAML front matter content.
 
-    @staticmethod
-    def format(content: str) -> str:
-        """Format YAML content.
+    Args:
+        content: Raw YAML string to format.
 
-        Args:
-            content: Raw YAML string to format.
+    Returns:
+        Formatted YAML string, or original content if formatting fails.
 
-        Returns:
-            Formatted YAML string.
-
-        """
-        try:
-            return _format_with_handler(
-                content,
-                frontmatter.YAMLHandler(),
-                "---\n{content}\n---\n",
-                "---",
-            )
-        except Exception:
-            return content
+    """
+    try:
+        return _format_with_handler(
+            content,
+            frontmatter.YAMLHandler(),
+            "---\n{content}\n---\n",
+            "---",
+        )
+    except Exception:
+        return content
 
 
-class TOMLFormatter:
-    """TOML formatter using python-frontmatter."""
+def format_toml(content: str) -> str:
+    """Format TOML front matter content.
 
-    @staticmethod
-    def format(content: str) -> str:
-        """Format TOML content.
+    Args:
+        content: Raw TOML string to format.
 
-        Args:
-            content: Raw TOML string to format.
+    Returns:
+        Formatted TOML string, or original content if formatting fails.
 
-        Returns:
-            Formatted TOML string.
-
-        """
-        try:
-            return _format_with_handler(
-                content,
-                frontmatter.TOMLHandler(),
-                "+++\n{content}\n+++\n",
-                "+++",
-            )
-        except Exception:
-            return content
+    """
+    try:
+        return _format_with_handler(
+            content,
+            frontmatter.TOMLHandler(),
+            "+++\n{content}\n+++\n",
+            "+++",
+        )
+    except Exception:
+        return content
 
 
-class JSONFormatter:
-    """JSON formatter using python-frontmatter."""
+def format_json(content: str) -> str:
+    """Format JSON front matter content.
 
-    @staticmethod
-    def format(content: str) -> str:
-        """Format JSON content.
+    Args:
+        content: Raw JSON string to format.
 
-        Args:
-            content: Raw JSON string to format.
+    Returns:
+        Formatted JSON string, or original content if formatting fails.
 
-        Returns:
-            Formatted JSON string.
-
-        """
-        try:
-            return _format_with_handler(
-                content,
-                frontmatter.JSONHandler(),
-                "{content}\n",
-                None,  # JSON has no delimiters
-            )
-        except Exception:
-            return content
+    """
+    try:
+        return _format_with_handler(
+            content,
+            frontmatter.JSONHandler(),
+            "{content}\n",
+            None,  # JSON has no delimiters
+        )
+    except Exception:
+        return content
