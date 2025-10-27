@@ -68,7 +68,6 @@ Bar
 Baz
 .
 ---
-Foo
 ---
 
 ## Bar
@@ -82,7 +81,6 @@ CommonMark v0.29 spec example 68
 ---
 .
 ---
-null
 ---
 .
 
@@ -144,11 +142,10 @@ author = "John Smith"
 Hugo uses TOML front matter with nested tables.
 .
 +++
+title = "Example"
 date = 2024-02-02T04:14:54-08:00
 draft = false
-title = "Example"
 weight = 10
-
 [params]
 author = "John Smith"
 +++
@@ -173,12 +170,12 @@ params:
 Hugo uses YAML front matter with nested maps.
 .
 ---
-title: Example
-date: 2024-02-02T04:14:54-08:00
+date: 2024-02-02 04:14:54-08:00
 draft: false
-weight: 10
 params:
   author: John Smith
+title: Example
+weight: 10
 ---
 
 # Example Headline
@@ -200,13 +197,13 @@ TODO: Format Hugo JSON front matter example
 Hugo uses JSON front matter with nested objects.
 .
 {
-  "date": "2024-02-02T04:14:54-08:00",
-  "draft": false,
-  "params": {
-    "author": "John Smith"
-  },
-  "title": "Example",
-  "weight": 10
+    "title": "Example",
+    "date": "2024-02-02T04:14:54-08:00",
+    "draft": false,
+    "weight": 10,
+    "params": {
+        "author": "John Smith"
+    }
 }
 
 # Example Headline
@@ -246,22 +243,25 @@ metadata:
 database:
   connections:
     primary:
+      credentials:
+        password: secret
+        username: admin
       host: localhost
       port: 5432
-      credentials:
-        username: admin
-        password: secret
     secondary:
       host: backup.example.com
       port: 5432
   settings:
     pool_size: 10
     timeout: 30
-tags: [nested, arrays, testing]
 metadata:
   created_by:
-    name: John Doe
     email: john@example.com
+    name: John Doe
+tags:
+- nested
+- arrays
+- testing
 ---
 
 # Content
@@ -294,20 +294,30 @@ matrix:
 .
 ---
 features:
-  - name: authentication
-    enabled: true
-    config:
-      providers: [oauth, saml]
-      timeout: 3600
-  - name: logging
-    enabled: false
-    config:
-      level: debug
-      handlers: [console, file]
+- config:
+    providers:
+    - oauth
+    - saml
+    timeout: 3600
+  enabled: true
+  name: authentication
+- config:
+    handlers:
+    - console
+    - file
+    level: debug
+  enabled: false
+  name: logging
 matrix:
-  - [1, 2, 3]
-  - [4, 5, 6]
-  - [7, 8, 9]
+- - 1
+  - 2
+  - 3
+- - 4
+  - 5
+  - 6
+- - 7
+  - 8
+  - 9
 ---
 
 # Content
@@ -350,6 +360,18 @@ level = "debug"
 # Content
 .
 +++
+[server]
+host = "example.com"
+port = 8080
+
+[server.ssl]
+enabled = true
+cert = "/path/to/cert"
+
+[server.ssl.options]
+min_version = "TLSv1.2"
+ciphers = ["ECDHE-RSA-AES256-GCM-SHA384"]
+
 [database]
 driver = "postgres"
 
@@ -358,28 +380,16 @@ host = "db1.example.com"
 port = 5432
 
 [database.primary.pool]
-max_connections = 20
 min_connections = 5
+max_connections = 20
 
-[logging]
-handlers = [
-    { path = "/var/log/app.log", type = "file" },
-    { level = "debug", type = "console" },
-]
+[[logging.handlers]]
+type = "file"
+path = "/var/log/app.log"
 
-[server]
-host = "example.com"
-port = 8080
-
-[server.ssl]
-cert = "/path/to/cert"
-enabled = true
-
-[server.ssl.options]
-ciphers = [
-    "ECDHE-RSA-AES256-GCM-SHA384",
-]
-min_version = "TLSv1.2"
+[[logging.handlers]]
+type = "console"
+level = "debug"
 +++
 
 # Content
@@ -494,7 +504,6 @@ Malformed - Empty front matter block
 # Content
 .
 ---
-null
 ---
 
 # Content
@@ -511,10 +520,10 @@ regex: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
 # Content
 .
 ---
-title: Test with émojis 🎉 and spëcial chars
-description: "Quotes: \"nested\" 'single'"
+description: 'Quotes: "nested" ''single'''
 path: C:\Windows\Path\With\Backslashes
 regex: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+title: "Test with émojis \U0001F389 and spëcial chars"
 ---
 
 # Content
@@ -580,6 +589,27 @@ large_text: This is a very long text value that spans multiple words and could p
 # Content
 .
 ---
+large_array:
+- item_001
+- item_002
+- item_003
+- item_004
+- item_005
+- item_006
+- item_007
+- item_008
+- item_009
+- item_010
+- item_011
+- item_012
+- item_013
+- item_014
+- item_015
+- item_016
+- item_017
+- item_018
+- item_019
+- item_020
 large_config:
   setting_001: value_001
   setting_002: value_002
@@ -611,27 +641,6 @@ large_config:
   setting_028: value_028
   setting_029: value_029
   setting_030: value_030
-large_array:
-  - item_001
-  - item_002
-  - item_003
-  - item_004
-  - item_005
-  - item_006
-  - item_007
-  - item_008
-  - item_009
-  - item_010
-  - item_011
-  - item_012
-  - item_013
-  - item_014
-  - item_015
-  - item_016
-  - item_017
-  - item_018
-  - item_019
-  - item_020
 large_text: This is a very long text value that spans multiple words and could potentially
   cause line wrapping issues if the formatter doesnt handle it correctly. It contains
   many characters and should be preserved exactly as written without modification
@@ -706,32 +715,64 @@ tags = ["production", "critical", "monitored"]
 # Content
 .
 +++
-description = "Large configuration file for testing"
-servers = [
-    { datacenter = "us-east-1", hostname = "server001.example.com", ip = "192.168.1.1" },
-    { datacenter = "us-east-1", hostname = "server002.example.com", ip = "192.168.1.2" },
-    { datacenter = "us-west-1", hostname = "server003.example.com", ip = "192.168.1.3" },
-    { datacenter = "us-west-1", hostname = "server004.example.com", ip = "192.168.1.4" },
-    { datacenter = "eu-central-1", hostname = "server005.example.com", ip = "192.168.1.5" },
-]
-services = [
-    { enabled = true, name = "service_001", port = 8001 },
-    { enabled = true, name = "service_002", port = 8002 },
-    { enabled = false, name = "service_003", port = 8003 },
-    { enabled = true, name = "service_004", port = 8004 },
-    { enabled = true, name = "service_005", port = 8005 },
-]
 version = "1.0.0"
+description = "Large configuration file for testing"
+
+[[services]]
+name = "service_001"
+enabled = true
+port = 8001
+
+[[services]]
+name = "service_002"
+enabled = true
+port = 8002
+
+[[services]]
+name = "service_003"
+enabled = false
+port = 8003
+
+[[services]]
+name = "service_004"
+enabled = true
+port = 8004
+
+[[services]]
+name = "service_005"
+enabled = true
+port = 8005
+
+[[servers]]
+hostname = "server001.example.com"
+ip = "192.168.1.1"
+datacenter = "us-east-1"
+
+[[servers]]
+hostname = "server002.example.com"
+ip = "192.168.1.2"
+datacenter = "us-east-1"
+
+[[servers]]
+hostname = "server003.example.com"
+ip = "192.168.1.3"
+datacenter = "us-west-1"
+
+[[servers]]
+hostname = "server004.example.com"
+ip = "192.168.1.4"
+datacenter = "us-west-1"
+
+[[servers]]
+hostname = "server005.example.com"
+ip = "192.168.1.5"
+datacenter = "eu-central-1"
 
 [metadata]
+created = 2024-01-01T00:00:00Z
+updated = 2024-12-31T23:59:59Z
 author = "System Administrator"
-created = 2024-01-01T00:00:00+00:00
-tags = [
-    "production",
-    "critical",
-    "monitored",
-]
-updated = 2024-12-31T23:59:59+00:00
+tags = ["production", "critical", "monitored"]
 +++
 
 # Content
@@ -756,18 +797,21 @@ literal: |-
 # Content
 .
 ---
-description: |
-  This is a multiline string
+description: 'This is a multiline string
+
   that spans multiple lines
+
   and preserves formatting
-script: >
-  This is a folded string
-  that will be concatenated
-  into a single line
-literal: |-
-  Line one
+
+  '
+literal: 'Line one
+
   Line two
-  Line three
+
+  Line three'
+script: 'This is a folded string that will be concatenated into a single line
+
+  '
 ---
 
 # Content
