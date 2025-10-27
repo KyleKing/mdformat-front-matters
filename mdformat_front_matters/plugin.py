@@ -9,7 +9,7 @@ from markdown_it import MarkdownIt
 from mdformat.renderer import RenderContext, RenderTreeNode
 from mdformat.renderer.typing import Postprocess, Render
 
-from ._formatters import JSONFormatter, TOMLFormatter, YAMLFormatter
+from ._formatters import format_json, format_toml, format_yaml
 from .mdit_plugins import front_matters_plugin
 
 
@@ -46,11 +46,11 @@ def _render_front_matter(node: RenderTreeNode, _context: RenderContext) -> str:
 
     # Format the content based on type
     if format_type == "yaml":
-        formatted_content = YAMLFormatter.format(content)
+        formatted_content = format_yaml(content)
     elif format_type == "toml":
-        formatted_content = TOMLFormatter.format(content)
+        formatted_content = format_toml(content)
     elif format_type == "json":
-        formatted_content = JSONFormatter.format(content)
+        formatted_content = format_json(content)
     else:
         # Unknown format, return as-is
         formatted_content = content
