@@ -17,9 +17,9 @@ if TYPE_CHECKING:
     from markdown_it.token import Token
 
 # Regex patterns for detecting front matter delimiters
-YAML_DELIMITER_PATTERN = re.compile(r"^-{3,}(\s*)$")
-TOML_DELIMITER_PATTERN = re.compile(r"^\+{3,}(\s*)$")
-JSON_OPENING_PATTERN = re.compile(r"^\s*\{\s*$")
+YAML_DELIMITER_PATTERN = r"^-{3,}(\s*)$"
+TOML_DELIMITER_PATTERN = r"^\+{3,}(\s*)$"
+JSON_OPENING_PATTERN = r"^\s*\{\s*$"
 
 
 def front_matters_plugin(md: MarkdownIt) -> None:
@@ -93,9 +93,9 @@ def _front_matter_rule(  # noqa: C901, PLR0914
     first_line = state.src[pos:maximum]
 
     # Detect format based on opening delimiter
-    yaml_match = YAML_DELIMITER_PATTERN.match(first_line)
-    toml_match = TOML_DELIMITER_PATTERN.match(first_line)
-    json_match = JSON_OPENING_PATTERN.match(first_line)
+    yaml_match = re.compile(YAML_DELIMITER_PATTERN).match(first_line)
+    toml_match = re.compile(TOML_DELIMITER_PATTERN).match(first_line)
+    json_match = re.compile(JSON_OPENING_PATTERN).match(first_line)
 
     # Check for minimum length (only for YAML/TOML)
     if not json_match and pos + 3 > maximum:
