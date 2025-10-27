@@ -15,7 +15,7 @@ def _strip_delimiters(formatted: str, delimiter: str) -> str:
         delimiter: The delimiter string (e.g., '---' or '+++').
 
     Returns:
-        Front matter with delimiters, comments, and trailing newlines removed.
+        Front matter with delimiters removed and trailing newlines stripped.
 
     """
     formatted = formatted.removeprefix(f"{delimiter}\n")
