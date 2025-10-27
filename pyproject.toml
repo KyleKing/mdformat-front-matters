@@ -13,12 +13,9 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-  "PyYAML >= 6.0",
   "mdformat >= 0.7.19",
   "mdit-py-plugins >= 0.4.1",
-  "tomli >= 2.0.0 ; python_version < '3.11'",
-  "tomli-w >= 1.0.0",
-  "yamlfix >= 1.16.0",
+  "python-frontmatter >= 1.0.0",
 ]
 dynamic = ["description", "version"]
 keywords = ["markdown", "markdown-it", "mdformat", "mdformat_plugin_template"]
