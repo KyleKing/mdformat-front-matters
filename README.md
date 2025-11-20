@@ -77,6 +77,34 @@ Or with uv:
 uv tool run --from mdformat-front-matters mdformat
 ```
 
+### Configuration Options
+
+#### Strict Mode
+
+Enable strict mode to fail on invalid front matter instead of preserving it. Useful for CI/CD pipelines.
+
+```sh
+mdformat --strict-front-matter document.md
+```
+
+In strict mode:
+- Invalid front matter raises an error
+- Front matter without valid key-value pairs raises an error
+- Ensures your documents have correctly formatted metadata
+
+Example usage in pre-commit:
+
+```yaml
+repos:
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.19
+    hooks:
+      - id: mdformat
+        args: [--strict-front-matter]
+        additional_dependencies:
+          - mdformat-front-matters
+```
+
 ## HTML Rendering
 
 To generate HTML output, `front_matters_plugin` can be imported from `mdit_plugins`. For more guidance on `MarkdownIt`, see the docs: <https://markdown-it-py.readthedocs.io/en/latest/using.html#the-parser>

@@ -10,6 +10,7 @@ from mdformat.renderer import RenderContext, RenderTreeNode
 from mdformat.renderer.typing import Postprocess, Render
 
 from ._formatters import format_json, format_toml, format_yaml
+from ._helpers import get_conf
 from .mdit_plugins import front_matters_plugin
 
 
@@ -18,9 +19,15 @@ def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
 
     Stored in `mdit.options["mdformat"]["plugin"]["front_matters"]`
 
-    Note: Currently no CLI arguments are needed.
-
     """
+    group.add_argument(
+        "--strict-front-matter",
+        action="store_true",
+        help=(
+            "Fail on invalid front matter instead of preserving original content. "
+            "Useful for CI/CD pipelines to catch formatting errors."
+        ),
+    )
 
 
 def update_mdit(mdit: MarkdownIt) -> None:
@@ -28,12 +35,12 @@ def update_mdit(mdit: MarkdownIt) -> None:
     mdit.use(front_matters_plugin)
 
 
-def _render_front_matter(node: RenderTreeNode, _context: RenderContext) -> str:
+def _render_front_matter(node: RenderTreeNode, context: RenderContext) -> str:
     """Render a front matter block.
 
     Args:
         node: The syntax tree node representing the front matter.
-        _context: The rendering context. (unused)
+        context: The rendering context.
 
     Returns:
         Formatted front matter block with appropriate delimiters.
@@ -44,13 +51,16 @@ def _render_front_matter(node: RenderTreeNode, _context: RenderContext) -> str:
     content = node.content
     markup = node.markup
 
+    # Check if strict mode is enabled
+    strict = bool(get_conf(context.options, "strict-front-matter"))
+
     # Format the content based on type
     if format_type == "yaml":
-        formatted_content = format_yaml(content)
+        formatted_content = format_yaml(content, strict=strict)
     elif format_type == "toml":
-        formatted_content = format_toml(content)
+        formatted_content = format_toml(content, strict=strict)
     elif format_type == "json":
-        formatted_content = format_json(content)
+        formatted_content = format_json(content, strict=strict)
     else:
         # Unknown format, return as-is
         formatted_content = content
