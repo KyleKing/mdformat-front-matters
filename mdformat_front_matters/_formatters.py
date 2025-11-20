@@ -2,9 +2,42 @@
 
 from __future__ import annotations
 
+import logging
+import re
 from typing import Any
 
 import frontmatter  # type: ignore[import-untyped]
+
+logger = logging.getLogger(__name__)
+
+
+def _normalize_toml_output(content: str) -> str:
+    """Normalize TOML output from python-frontmatter.
+
+    Removes extra blank lines and trailing commas added by the TOML library.
+
+    Args:
+        content: TOML content to normalize.
+
+    Returns:
+        Normalized TOML content.
+
+    """
+    # Remove blank lines before section headers like [section] but NOT array tables [[section]]
+    # Array tables should keep blank lines between items
+    content = re.sub(r"\n\n+(\[(?!\[))", r"\n\1", content)
+
+    # Remove trailing commas in arrays (e.g., ["a", "b",] -> ["a", "b"])
+    content = re.sub(r",(\s*])", r"\1", content)
+
+    # Normalize array spacing: [ "item" -> ["item"
+    content = re.sub(r"\[\s+", r"[", content)
+    content = re.sub(r"\s+]", r"]", content)
+
+    # Remove blank line before closing (if present)
+    content = re.sub(r"\n\n+$", "\n", content)
+
+    return content
 
 
 def _strip_delimiters(formatted: str, delimiter: str) -> str:
@@ -96,7 +129,11 @@ def format_yaml(content: str) -> str:
             "---\n{content}\n---\n",
             "---",
         )
-    except Exception:
+    except (ValueError, TypeError, AttributeError) as e:
+        logger.debug("Failed to format YAML front matter: %s", e)
+        return content
+    except Exception as e:  # Catch any other parsing errors
+        logger.warning("Unexpected error formatting YAML front matter: %s", e)
         return content
 
 
@@ -111,13 +148,19 @@ def format_toml(content: str) -> str:
 
     """
     try:
-        return _format_with_handler(
+        formatted = _format_with_handler(
             content,
             frontmatter.TOMLHandler(),
             "+++\n{content}\n+++\n",
             "+++",
         )
-    except Exception:
+        # Normalize TOML output to remove extra blank lines and trailing commas
+        return _normalize_toml_output(formatted)
+    except (ValueError, TypeError, AttributeError) as e:
+        logger.debug("Failed to format TOML front matter: %s", e)
+        return content
+    except Exception as e:  # Catch any other parsing errors
+        logger.warning("Unexpected error formatting TOML front matter: %s", e)
         return content
 
 
@@ -138,5 +181,9 @@ def format_json(content: str) -> str:
             "{content}\n",
             None,  # JSON has no delimiters
         )
-    except Exception:
+    except (ValueError, TypeError, AttributeError) as e:
+        logger.debug("Failed to format JSON front matter: %s", e)
+        return content
+    except Exception as e:  # Catch any other parsing errors
+        logger.warning("Unexpected error formatting JSON front matter: %s", e)
         return content

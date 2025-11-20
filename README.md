@@ -2,7 +2,51 @@
 
 [![Build Status][ci-badge]][ci-link] [![PyPI version][pypi-badge]][pypi-link]
 
-An [mdformat](https://github.com/executablebooks/mdformat) plugin for `<placeholder>`
+An [mdformat](https://github.com/executablebooks/mdformat) plugin for normalizing YAML, TOML, and JSON front matter in CommonMark documents
+
+## Features
+
+- **Multi-format support**: Handles YAML (`---`), TOML (`+++`), and JSON (`{...}`) front matter
+- **Automatic normalization**: Formats front matter consistently (sorted keys, standardized indentation)
+- **Error resilient**: Preserves original content if parsing fails
+- **Zero configuration**: Works out of the box with mdformat
+
+## Examples
+
+**YAML Front Matter:**
+```markdown
+---
+title: My Document
+date: 2024-01-01
+tags:
+  - example
+  - demo
+---
+
+# Content
+```
+
+**TOML Front Matter:**
+```markdown
++++
+title = "My Document"
+date = 2024-01-01
+tags = ["example", "demo"]
++++
+
+# Content
+```
+
+**JSON Front Matter:**
+```markdown
+{
+    "title": "My Document",
+    "date": "2024-01-01",
+    "tags": ["example", "demo"]
+}
+
+# Content
+```
 
 ## `mdformat` Usage
 
