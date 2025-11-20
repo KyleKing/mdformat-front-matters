@@ -89,9 +89,11 @@ def _format_with_handler(
         handler=handler,
     )
 
-    # Return empty string if no metadata
+    # Raise error if no valid metadata to prevent data loss
+    # Empty metadata means the content was not valid structured data
     if not metadata:
-        return ""
+        msg = "Front matter contains no valid key-value pairs"
+        raise ValueError(msg)
 
     # Create a post and dump back to formatted string
     post = frontmatter.Post("", **metadata)

@@ -68,6 +68,7 @@ Bar
 Baz
 .
 ---
+Foo
 ---
 
 ## Bar
