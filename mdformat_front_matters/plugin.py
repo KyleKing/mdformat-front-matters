@@ -52,7 +52,9 @@ def _render_front_matter(node: RenderTreeNode, context: RenderContext) -> str:
     markup = node.markup
 
     # Check if strict mode is enabled
-    strict = bool(get_conf(context.options, "strict-front-matter"))
+    # Note: argparse converts hyphens to underscores, so --strict-front-matter
+    # is stored as "strict_front_matter" in the options dict
+    strict = bool(get_conf(context.options, "strict_front_matter"))
 
     # Format the content based on type
     if format_type == "yaml":

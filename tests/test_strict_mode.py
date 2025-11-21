@@ -23,7 +23,7 @@ def test_strict_mode_with_invalid_yaml():
         mdformat.text(
             text,
             extensions={"front_matters"},
-            options={"strict-front-matter": True},
+            options={"strict_front_matter": True},
         )
 
 
@@ -43,7 +43,7 @@ Foo
         mdformat.text(
             text,
             extensions={"front_matters"},
-            options={"strict-front-matter": True},
+            options={"strict_front_matter": True},
         )
 
 
@@ -60,7 +60,7 @@ description: Valid YAML
     result_strict = mdformat.text(
         text,
         extensions={"front_matters"},
-        options={"strict-front-matter": True},
+        options={"strict_front_matter": True},
     )
 
     assert "title:" in result_default
@@ -86,7 +86,7 @@ description = "Valid"
         mdformat.text(
             text,
             extensions={"front_matters"},
-            options={"strict-front-matter": True},
+            options={"strict_front_matter": True},
         )
 
 
@@ -107,7 +107,7 @@ def test_strict_mode_with_invalid_json():
         mdformat.text(
             text,
             extensions={"front_matters"},
-            options={"strict-front-matter": True},
+            options={"strict_front_matter": True},
         )
 
 
@@ -144,7 +144,7 @@ def test_strict_mode_accepts_valid_content(text):
     result = mdformat.text(
         text,
         extensions={"front_matters"},
-        options={"strict-front-matter": True},
+        options={"strict_front_matter": True},
     )
     assert "# Content" in result
     assert "title" in result.lower()
