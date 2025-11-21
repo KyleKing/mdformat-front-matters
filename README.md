@@ -14,6 +14,7 @@ An [mdformat](https://github.com/executablebooks/mdformat) plugin for normalizin
 ## Examples
 
 **YAML Front Matter:**
+
 ```markdown
 ---
 title: My Document
@@ -27,6 +28,7 @@ tags:
 ```
 
 **TOML Front Matter:**
+
 ```markdown
 +++
 title = "My Document"
@@ -38,6 +40,7 @@ tags = ["example", "demo"]
 ```
 
 **JSON Front Matter:**
+
 ```markdown
 {
     "title": "My Document",
@@ -88,6 +91,7 @@ mdformat --strict-front-matter document.md
 ```
 
 In strict mode:
+
 - Invalid front matter raises an error
 - Front matter without valid key-value pairs raises an error
 - Ensures your documents have correctly formatted metadata
