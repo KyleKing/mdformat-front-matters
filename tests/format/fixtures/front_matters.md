@@ -382,7 +382,7 @@ host = "db1.example.com"
 port = 5432
 [server.ssl.options]
 min_version = "TLSv1.2"
-ciphers = ["ECDHE-RSA-AES256-GCM-SHA384"]
+ciphers = [ "ECDHE-RSA-AES256-GCM-SHA384"]
 [database.primary.pool]
 min_connections = 5
 max_connections = 20
@@ -706,7 +706,7 @@ datacenter = "eu-central-1"
 created = 2024-01-01T00:00:00Z
 updated = 2024-12-31T23:59:59Z
 author = "System Administrator"
-tags = ["production", "critical", "monitored"]
+tags = [ "production", "critical", "monitored"]
 +++
 # Content
 .
@@ -766,7 +766,7 @@ datacenter = "eu-central-1"
 created = 2024-01-01T00:00:00Z
 updated = 2024-12-31T23:59:59Z
 author = "System Administrator"
-tags = ["production", "critical", "monitored"]
+tags = [ "production", "critical", "monitored"]
 +++
 
 # Content

@@ -30,9 +30,10 @@ def _normalize_toml_output(content: str) -> str:
     # Remove trailing commas in arrays (e.g., ["a", "b",] -> ["a", "b"])
     content = re.sub(r",(\s*])", r"\1", content)
 
-    # Normalize array spacing: [ "item" -> ["item"
-    content = re.sub(r"\[\s+", r"[", content)
-    content = re.sub(r"\s+]", r"]", content)
+    # NOTE: We do NOT normalize array spacing (e.g., [ "item" -> ["item"])
+    # because regex-based approach would corrupt bracket spacing inside strings.
+    # Example: description = "[ spaced ]" would incorrectly become "[spaced]"
+    # The python-frontmatter TOML library already handles spacing correctly.
 
     # Remove blank line before closing (if present)
     content = re.sub(r"\n\n+$", "\n", content)
