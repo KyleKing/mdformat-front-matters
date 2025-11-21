@@ -167,7 +167,7 @@ def _front_matter_rule(  # noqa: C901, PLR0914
     return True
 
 
-def _parse_json_front_matter(
+def _parse_json_front_matter(  # noqa: C901
     state: StateBlock,
     start_line: int,
     end_line: int,
@@ -194,7 +194,7 @@ def _parse_json_front_matter(
     escape_next = False
 
     # Collect lines until we find the closing brace
-    while next_line < end_line:
+    while next_line < end_line:  # noqa: PLR1702
         pos = state.bMarks[next_line] + state.tShift[next_line]
         maximum = state.eMarks[next_line]
         line_content = state.src[pos:maximum]

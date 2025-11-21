@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import time
 
-import pytest
-
 import mdformat
+import pytest
 
 
 @pytest.fixture
@@ -68,7 +67,7 @@ def test_large_yaml_performance(large_yaml_document):
     assert "# Content" in result
     assert "data:" in result
     # Should format in under 2 seconds
-    assert elapsed < 2.0, f"Formatting took {elapsed:.2f}s, expected < 2.0s"
+    assert elapsed < 2.0, f"Formatting took {elapsed:.2f}s, expected < 2.0s"  # noqa: PLR2004
 
 
 def test_large_toml_performance(large_toml_document):
@@ -80,7 +79,7 @@ def test_large_toml_performance(large_toml_document):
     assert result is not None
     assert "# Content" in result
     # Should format in under 2 seconds
-    assert elapsed < 2.0, f"Formatting took {elapsed:.2f}s, expected < 2.0s"
+    assert elapsed < 2.0, f"Formatting took {elapsed:.2f}s, expected < 2.0s"  # noqa: PLR2004
 
 
 def test_deeply_nested_yaml_performance(deeply_nested_yaml):
@@ -98,7 +97,7 @@ def test_deeply_nested_yaml_performance(deeply_nested_yaml):
 def test_multiple_documents_performance():
     """Test formatting multiple documents in sequence."""
     documents = [
-        """---
+        f"""---
 title: Document {i}
 date: 2024-01-{i:02d}
 tags:
@@ -106,9 +105,7 @@ tags:
   - tag2
 ---
 # Content {i}
-""".format(
-            i=i
-        )
+"""
         for i in range(1, 101)
     ]
 
@@ -119,7 +116,7 @@ tags:
     elapsed = time.time() - start
 
     # 100 documents should format in under 3 seconds
-    assert elapsed < 3.0, f"Formatting 100 docs took {elapsed:.2f}s, expected < 3.0s"
+    assert elapsed < 3.0, f"Formatting 100 docs took {elapsed:.2f}s, expected < 3.0s"  # noqa: PLR2004
 
 
 @pytest.mark.parametrize("count", [10, 100, 500])
@@ -172,4 +169,4 @@ def test_empty_document_performance():
     elapsed = time.time() - start
 
     # 1000 iterations should complete in under 2 seconds
-    assert elapsed < 2.0, f"1000 iterations took {elapsed:.2f}s, expected < 2.0s"
+    assert elapsed < 2.0, f"1000 iterations took {elapsed:.2f}s, expected < 2.0s"  # noqa: PLR2004

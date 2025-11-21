@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import pytest
-
 import mdformat
+import pytest
 
 
 def test_strict_mode_with_invalid_yaml():
@@ -19,7 +18,7 @@ def test_strict_mode_with_invalid_yaml():
     assert "] This is a YAML parse error" in result
 
     # Strict mode should raise an error
-    with pytest.raises(Exception):  # Could be various exception types
+    with pytest.raises(Exception, match=r".*"):
         mdformat.text(
             text,
             extensions={"front_matters"},
@@ -28,7 +27,7 @@ def test_strict_mode_with_invalid_yaml():
 
 
 def test_strict_mode_with_empty_front_matter():
-    """Test that strict mode raises an error for empty front matter (no key-value pairs)."""
+    """Test that strict mode raises error for empty front matter."""
     text = """---
 Foo
 ---
@@ -39,7 +38,7 @@ Foo
     assert "Foo" in result
 
     # Strict mode should raise ValueError (empty metadata)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r".*"):
         mdformat.text(
             text,
             extensions={"front_matters"},
@@ -71,18 +70,18 @@ description: Valid YAML
 
 def test_strict_mode_with_invalid_toml():
     """Test that strict mode raises an error for invalid TOML."""
-    text = '''+++
+    text = """+++
 title = "Missing quote
 description = "Valid"
 +++
 # Content
-'''
+"""
     # Default mode should preserve content
     result = mdformat.text(text, extensions={"front_matters"})
     assert 'title = "Missing quote' in result
 
     # Strict mode should raise an error
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match=r".*"):
         mdformat.text(
             text,
             extensions={"front_matters"},
@@ -103,7 +102,7 @@ def test_strict_mode_with_invalid_json():
     assert '"title": "Test"' in result
 
     # Strict mode should raise an error
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match=r".*"):
         mdformat.text(
             text,
             extensions={"front_matters"},

@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import pytest
-
 import mdformat
+import pytest
 
 
 @pytest.mark.parametrize(
@@ -202,12 +201,12 @@ child: wrong_indent
         ),
         (
             "toml_missing_quote",
-            '''+++
+            """+++
 title = "Missing quote
 description = "Valid"
 +++
 # Content
-''',
+""",
         ),
     ],
 )

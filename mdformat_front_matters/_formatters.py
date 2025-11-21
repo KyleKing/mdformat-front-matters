@@ -23,8 +23,8 @@ def _normalize_toml_output(content: str) -> str:
         Normalized TOML content.
 
     """
-    # Remove blank lines before section headers like [section] but NOT array tables [[section]]
-    # Array tables should keep blank lines between items
+    # Remove blank lines before section headers like [section]
+    # but NOT array tables [[section]] - they should keep blank lines
     content = re.sub(r"\n\n+(\[(?!\[))", r"\n\1", content)
 
     # Remove trailing commas in arrays (e.g., ["a", "b",] -> ["a", "b"])
@@ -36,9 +36,7 @@ def _normalize_toml_output(content: str) -> str:
     # The python-frontmatter TOML library already handles spacing correctly.
 
     # Remove blank line before closing (if present)
-    content = re.sub(r"\n\n+$", "\n", content)
-
-    return content
+    return re.sub(r"\n\n+$", "\n", content)
 
 
 def _strip_delimiters(formatted: str, delimiter: str) -> str:
@@ -83,6 +81,9 @@ def _format_with_handler(
     Returns:
         Formatted front matter.
 
+    Raises:
+        ValueError: When metadata contains no valid key-value pairs.
+
     """
     # Parse the content
     metadata, _ = frontmatter.parse(
@@ -120,14 +121,16 @@ def format_yaml(content: str, *, strict: bool = False) -> str:
 
     Args:
         content: Raw YAML string to format.
-        strict: If True, raise exceptions instead of preserving original content.
+        strict: If True, raise exceptions instead of preserving original.
 
     Returns:
-        Formatted YAML string, or original content if formatting fails (non-strict mode).
+        Formatted YAML string, or original content if formatting fails
+        in non-strict mode.
 
     Raises:
         ValueError: In strict mode when content has no valid key-value pairs.
-        Exception: In strict mode when parsing fails.
+        TypeError: In strict mode when content has invalid types.
+        AttributeError: In strict mode when content structure is invalid.
 
     """
     try:
@@ -154,14 +157,16 @@ def format_toml(content: str, *, strict: bool = False) -> str:
 
     Args:
         content: Raw TOML string to format.
-        strict: If True, raise exceptions instead of preserving original content.
+        strict: If True, raise exceptions instead of preserving original.
 
     Returns:
-        Formatted TOML string, or original content if formatting fails (non-strict mode).
+        Formatted TOML string, or original content if formatting fails
+        in non-strict mode.
 
     Raises:
         ValueError: In strict mode when content has no valid key-value pairs.
-        Exception: In strict mode when parsing fails.
+        TypeError: In strict mode when content has invalid types.
+        AttributeError: In strict mode when content structure is invalid.
 
     """
     try:
@@ -190,14 +195,16 @@ def format_json(content: str, *, strict: bool = False) -> str:
 
     Args:
         content: Raw JSON string to format.
-        strict: If True, raise exceptions instead of preserving original content.
+        strict: If True, raise exceptions instead of preserving original.
 
     Returns:
-        Formatted JSON string, or original content if formatting fails (non-strict mode).
+        Formatted JSON string, or original content if formatting fails
+        in non-strict mode.
 
     Raises:
         ValueError: In strict mode when content has no valid key-value pairs.
-        Exception: In strict mode when parsing fails.
+        TypeError: In strict mode when content has invalid types.
+        AttributeError: In strict mode when content structure is invalid.
 
     """
     try:

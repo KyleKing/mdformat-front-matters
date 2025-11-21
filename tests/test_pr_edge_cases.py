@@ -12,30 +12,34 @@ def test_toml_string_with_brackets():
     bracket spacing inside TOML strings.
     Example: description = "[ spaced ]" should NOT become "[spaced]"
     """
-    text = '''+++
+    text = """+++
 title = "Test"
 description = "[ spaced ]"
 template = "use {variable} here"
 array_in_string = "[1, 2, 3]"
 +++
 # Content
-'''
+"""
     result = mdformat.text(text, extensions={"front_matters"})
 
     # Verify brackets in strings are preserved
-    assert '[ spaced ]' in result or '"[ spaced ]"' in result
-    assert '{variable}' in result or '"{variable}"' in result or '"use {variable} here"' in result
-    assert '"[1, 2, 3]"' in result or '[1, 2, 3]' in result
+    assert "[ spaced ]" in result or '"[ spaced ]"' in result
+    assert (
+        "{variable}" in result
+        or '"{variable}"' in result
+        or '"use {variable} here"' in result
+    )
+    assert '"[1, 2, 3]"' in result or "[1, 2, 3]" in result
 
 
 def test_toml_actual_arrays_normalized():
     """Test that actual TOML arrays are still normalized correctly."""
-    text = '''+++
+    text = """+++
 tags = ["tag1", "tag2",]
 numbers = [ 1 , 2 , 3 ]
 +++
 # Content
-'''
+"""
     result = mdformat.text(text, extensions={"front_matters"})
 
     # Trailing comma should be removed
@@ -48,13 +52,13 @@ numbers = [ 1 , 2 , 3 ]
 
 def test_json_with_escaped_quotes():
     """Test JSON with properly escaped quotes."""
-    text = r'''{
+    text = r"""{
     "quote": "He said \"hello\"",
     "path": "C:\\Users\\test",
     "backslash_quote": "test\\"
 }
 # Content
-'''
+"""
     result = mdformat.text(text, extensions={"front_matters"})
 
     assert "# Content" in result
@@ -67,12 +71,12 @@ def test_json_with_escaped_backslash_then_quote():
     The sequence \\" means: escaped backslash (literal \) followed by
     unescaped quote (ends the string).
     """
-    text = r'''{
+    text = r"""{
     "ends_with_backslash": "test\\",
     "next_key": "value"
 }
 # Content
-'''
+"""
     result = mdformat.text(text, extensions={"front_matters"})
 
     assert "# Content" in result
@@ -81,13 +85,13 @@ def test_json_with_escaped_backslash_then_quote():
 
 def test_json_with_braces_in_strings():
     """Test JSON with braces inside string values."""
-    text = '''{
+    text = """{
     "template": "use {variable} here",
     "nested": "{ nested { braces } }",
     "array_like": "[1, 2, 3]"
 }
 # Content
-'''
+"""
     result = mdformat.text(text, extensions={"front_matters"})
 
     assert "# Content" in result
@@ -97,13 +101,13 @@ def test_json_with_braces_in_strings():
 
 def test_json_multiline_with_escapes():
     """Test multiline JSON with various escape sequences."""
-    text = r'''{
+    text = r"""{
     "line1": "first line",
     "line2": "second with \"quotes\"",
     "line3": "third with \\ backslash"
 }
 # Content
-'''
+"""
     result = mdformat.text(text, extensions={"front_matters"})
 
     assert "# Content" in result
