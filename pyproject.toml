@@ -16,6 +16,7 @@ dependencies = [
   "mdformat >= 0.7.19",
   "mdit-py-plugins >= 0.4.1",
   "python-frontmatter >= 1.0.0",
+  "toml >= 0.10.0",
 ]
 keywords = ["markdown", "markdown-it", "mdformat", "mdformat_plugin_template"]
 license = "MIT"
