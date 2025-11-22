@@ -167,7 +167,7 @@ def _front_matter_rule(  # noqa: C901, PLR0914
     return True
 
 
-def _parse_json_front_matter(
+def _parse_json_front_matter(  # noqa: C901
     state: StateBlock,
     start_line: int,
     end_line: int,
@@ -190,33 +190,46 @@ def _parse_json_front_matter(
     content_lines = []
     brace_count = 0
     next_line = start_line
+    in_string = False
+    escape_next = False
 
     # Collect lines until we find the closing brace
-    while next_line < end_line:
+    while next_line < end_line:  # noqa: PLR1702
         pos = state.bMarks[next_line] + state.tShift[next_line]
         maximum = state.eMarks[next_line]
         line_content = state.src[pos:maximum]
 
         content_lines.append(line_content)
 
-        # Count braces to find the closing one
+        # Count braces to find the closing one, respecting string context
         for char in line_content:
-            if char == "{":
-                brace_count += 1
-            elif char == "}":
-                brace_count -= 1
-                if brace_count == 0:
-                    # Found closing brace
-                    if not silent:
-                        content = "\n".join(content_lines)
-                        token = state.push("front_matter", "", 0)
-                        token.content = content
-                        token.markup = ""
-                        token.map = [start_line, next_line + 1]
-                        token.meta = {"format": "json"}
+            if escape_next:
+                escape_next = False
+                continue
 
-                    state.line = next_line + 1
-                    return True
+            if char == "\\":
+                escape_next = True
+                continue
+
+            if char == '"' and not escape_next:
+                in_string = not in_string
+            elif not in_string:
+                if char == "{":
+                    brace_count += 1
+                elif char == "}":
+                    brace_count -= 1
+                    if brace_count == 0:
+                        # Found closing brace
+                        if not silent:
+                            content = "\n".join(content_lines)
+                            token = state.push("front_matter", "", 0)
+                            token.content = content
+                            token.markup = ""
+                            token.map = [start_line, next_line + 1]
+                            token.meta = {"format": "json"}
+
+                        state.line = next_line + 1
+                        return True
 
         next_line += 1
 

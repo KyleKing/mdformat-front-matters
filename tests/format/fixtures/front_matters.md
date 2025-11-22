@@ -68,6 +68,7 @@ Bar
 Baz
 .
 ---
+Foo
 ---
 
 ## Bar
@@ -363,26 +364,9 @@ level = "debug"
 [server]
 host = "example.com"
 port = 8080
-
-[server.ssl]
-enabled = true
-cert = "/path/to/cert"
-
-[server.ssl.options]
-min_version = "TLSv1.2"
-ciphers = ["ECDHE-RSA-AES256-GCM-SHA384"]
-
 [database]
 driver = "postgres"
-
-[database.primary]
-host = "db1.example.com"
-port = 5432
-
-[database.primary.pool]
-min_connections = 5
-max_connections = 20
-
+[logging]
 [[logging.handlers]]
 type = "file"
 path = "/var/log/app.log"
@@ -390,6 +374,18 @@ path = "/var/log/app.log"
 [[logging.handlers]]
 type = "console"
 level = "debug"
+[server.ssl]
+enabled = true
+cert = "/path/to/cert"
+[database.primary]
+host = "db1.example.com"
+port = 5432
+[server.ssl.options]
+min_version = "TLSv1.2"
+ciphers = [ "ECDHE-RSA-AES256-GCM-SHA384"]
+[database.primary.pool]
+min_connections = 5
+max_connections = 20
 +++
 
 # Content
@@ -523,7 +519,7 @@ regex: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
 description: 'Quotes: "nested" ''single'''
 path: C:\Windows\Path\With\Backslashes
 regex: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
-title: "Test with émojis \U0001F389 and spëcial chars"
+title: Test with émojis 🎉 and spëcial chars
 ---
 
 # Content
@@ -710,14 +706,13 @@ datacenter = "eu-central-1"
 created = 2024-01-01T00:00:00Z
 updated = 2024-12-31T23:59:59Z
 author = "System Administrator"
-tags = ["production", "critical", "monitored"]
+tags = [ "production", "critical", "monitored"]
 +++
 # Content
 .
 +++
 version = "1.0.0"
 description = "Large configuration file for testing"
-
 [[services]]
 name = "service_001"
 enabled = true
@@ -767,12 +762,11 @@ datacenter = "us-west-1"
 hostname = "server005.example.com"
 ip = "192.168.1.5"
 datacenter = "eu-central-1"
-
 [metadata]
 created = 2024-01-01T00:00:00Z
 updated = 2024-12-31T23:59:59Z
 author = "System Administrator"
-tags = ["production", "critical", "monitored"]
+tags = [ "production", "critical", "monitored"]
 +++
 
 # Content
