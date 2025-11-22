@@ -1,56 +1,94 @@
-# AI Contributor Guide
+# AGENTS.md
 
-## Project Overview
+## Testing
 
-- mdformat plugin that normalizes YAML/TOML front matter blocks for CommonMark documents.
-- Primary code lives in `mdformat_front_matters/` (`__init__.py`, `plugin.py`, `_helpers.py`); tests reside under `tests/` with behavior fixtures in `format/` and `render/`.
+```bash
+# Run all tests using tox
+tox
 
-## Setup Commands
+# Run tests with coverage (Python 3.14 - current version)
+tox -e test
 
-- Create a virtualenv: `python -m venv .venv && source .venv/bin/activate`
-- Install the project with extras: `pip install -e ".[test]"`
-- Reuse `tox -p auto` for all defined environments when you need a clean sweep.
+# Run tests with coverage (Python 3.10 - minimum version)
+tox -e test-min
 
-## Build & Test Commands
+# Run specific tests with pytest flags
+tox -e test -- --exitfirst --failed-first --new-first -vv --snapshot-update
+```
 
-- Run full test + coverage: `tox -e py312-test`
-- Target a suite: `pytest tests/format/test_format.py -vv --cov=mdformat_front_matters`
-- Lint + format: `tox -e py312-ruff` (or `ruff check . --fix` / `ruff format .`)
-- Type checking: `tox -e py312-type` or `mypy mdformat_front_matters`
-- Pre-commit hooks: `tox -e py312-pre-commit`
-- Rapid loop: `ptw .` leverages the pytest-watcher defaults from `tool.pytest-watcher`
+## Linting and Formatting
 
-## Key Interfaces & Architecture
+```bash
+# Run all pre-commit hooks (using prek)
+tox -e prek
+# Or run directly with prek
+prek run --all
 
-- Entry point declared in `pyproject.toml` under `mdformat.parser_extension`.
-- `mdformat_front_matters.__all__` exports `update_mdit`, `RENDERERS`, `POSTPROCESSORS`, and `add_cli_argument_group`.
-- The markdown-it plugin (`front_matters_plugin`) is registered via `update_mdit`; renderer/postprocessor callables must use snake_case token names.
-- Retrieve plugin configuration via `_helpers.get_conf(context.options, "key")` so CLI, API, and pyproject sources stay consistent.
+# Run ruff for linting and formatting
+tox -e ruff
+# With unsafe fixes
+tox -e ruff -- --unsafe-fixes
+```
 
-## Code Style Guidelines
+## Type Checking
 
-- Python ≥3.9, four-space indentation, Ruff-enforced 88-character lines.
-- Prefer Google-style docstrings with explicit typing; keep public exports declared in `__all__`.
-- Align renderer mappings with the markdown-it token names and keep helper utilities co-located so Flit packages them.
+```bash
+# Run mypy type checking
+tox -e type
+```
 
-## Testing Instructions
+## Pre-commit Hook Testing
 
-- Use pytest with beartype; name new modules/functions `test_*`.
-- Parser fixtures live in `tests/format/fixtures/`, renderer snapshots in `tests/render/fixtures/`, shared helpers in `tests/helpers.py`.
-- Add regression fixtures before fixes and keep `pytest --cov=mdformat_front_matters` coverage stable.
+```bash
+# Test the plugin as a pre-commit hook
+tox -e hook-min
+```
 
-## Security Considerations
+## Architecture
 
-- Never embed real secrets or production front matter in fixtures; sanitize sample metadata.
-- The formatter should stay purely deterministic—avoid introducing network access, file writes outside the workspace, or dynamic code execution.
-- Validate front matter parsing defensively and prefer schema checks or graceful fallbacks over raising uncaught exceptions.
+### Plugin System
 
-## Additional Instructions
+The package implements mdformat's plugin interface with up to four key exports in `__init__.py`:
 
-- Run lint, type, and test tox environments before submitting patches; refresh README examples when CLI or formatter behavior changes.
-- Document noteworthy behavior changes in the README (or upcoming release notes) and keep CLI argument docs in sync.
-- For pull requests, include a brief summary of coverage impact and mention any new configuration keys added via `_helpers.get_conf`.
+- `update_mdit`: Registers markdown-it parser extensions
+- `add_cli_argument_group`: Optionally adds CLI flags
+- `RENDERERS`: Maps syntax tree node types to render functions
+- `POSTPROCESSORS`: Post-processes rendered output (list normalization, inline wrapping, deflist escaping)
 
-## Release & Packaging
+### Core Components
 
-- Distributions are managed with Flit; do not publish from agent sessions.
+**mdformat_front_matters/plugin.py**
+
+- Entry point that configures the mdformat plugin, registers all mdit_plugins, defines custom renders, and handles CLI configuration options
+
+### Configuration Options
+
+Configuration can be passed via:
+
+1. Example CLI arguments: `--cli-argument`
+1. Example TOML config file (`.mdformat.toml`):
+    ```toml
+    [plugin.front_matters]
+    cli_argument = true
+    ```
+1. API: `mdformat.text(content, extensions={"front_matters"}, options={...})`
+
+### Testing Strategy
+
+**Snapshot Testing**
+
+- Test fixtures in `tests/format/fixtures/` and `tests/render/fixtures/`
+- Main test file: `tests/test_mdformat.py` verifies idempotent formatting against `tests/pre-commit-test.md`
+
+**Test Organization**
+
+- `tests/format/`: Tests formatting output (input markdown → formatted markdown)
+- `tests/render/`: Tests HTML rendering (markdown → HTML via markdown-it)
+
+## Development Notes
+
+- This project uses `uv-build` as the build backend
+- Uses `tox` for test automation with multiple Python versions (3.10, 3.14)
+- Pre-commit is configured but the project now uses `prek` (faster alternative)
+- Python 3.10+ is required (see `requires-python` in `pyproject.toml`)
+- Version is defined in `mdformat_front_matters/__init__.py` as `__version__`

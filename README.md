@@ -14,6 +14,7 @@ An [mdformat](https://github.com/executablebooks/mdformat) plugin for normalizin
 ## Examples
 
 **YAML Front Matter:**
+
 ```markdown
 ---
 title: My Document
@@ -27,6 +28,7 @@ tags:
 ```
 
 **TOML Front Matter:**
+
 ```markdown
 +++
 title = "My Document"
@@ -38,6 +40,7 @@ tags = ["example", "demo"]
 ```
 
 **JSON Front Matter:**
+
 ```markdown
 {
     "title": "My Document",
@@ -52,7 +55,7 @@ tags = ["example", "demo"]
 
 Add this package wherever you use `mdformat` and the plugin will be auto-recognized. No additional configuration necessary. See [additional information on `mdformat` plugins here](https://mdformat.readthedocs.io/en/stable/users/plugins.html)
 
-### Pre-Commit
+### pre-commit / prek
 
 ```yaml
 repos:
@@ -64,17 +67,46 @@ repos:
           - mdformat-front-matters
 ```
 
-### pipx/uv
+### uvx
+
+```sh
+uvx --from mdformat-front-matters mdformat
+```
+
+Or with pipx:
 
 ```sh
 pipx install mdformat
 pipx inject mdformat mdformat-front-matters
 ```
 
-Or with uv:
+### Configuration Options
+
+#### Strict Mode
+
+Enable strict mode to fail on invalid front matter instead of preserving it. Useful for CI/CD pipelines.
 
 ```sh
-uv tool run --from mdformat-front-matters mdformat
+mdformat --strict-front-matter document.md
+```
+
+In strict mode:
+
+- Invalid front matter raises an error
+- Front matter without valid key-value pairs raises an error
+- Ensures your documents have correctly formatted metadata
+
+Example usage in pre-commit:
+
+```yaml
+repos:
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.19
+    hooks:
+      - id: mdformat
+        args: [--strict-front-matter]
+        additional_dependencies:
+          - mdformat-front-matters
 ```
 
 ## HTML Rendering

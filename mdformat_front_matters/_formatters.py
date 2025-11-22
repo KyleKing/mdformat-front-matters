@@ -23,21 +23,20 @@ def _normalize_toml_output(content: str) -> str:
         Normalized TOML content.
 
     """
-    # Remove blank lines before section headers like [section] but NOT array tables [[section]]
-    # Array tables should keep blank lines between items
+    # Remove blank lines before section headers like [section]
+    # but NOT array tables [[section]] - they should keep blank lines
     content = re.sub(r"\n\n+(\[(?!\[))", r"\n\1", content)
 
     # Remove trailing commas in arrays (e.g., ["a", "b",] -> ["a", "b"])
     content = re.sub(r",(\s*])", r"\1", content)
 
-    # Normalize array spacing: [ "item" -> ["item"
-    content = re.sub(r"\[\s+", r"[", content)
-    content = re.sub(r"\s+]", r"]", content)
+    # NOTE: We do NOT normalize array spacing (e.g., [ "item" -> ["item"])
+    # because regex-based approach would corrupt bracket spacing inside strings.
+    # Example: description = "[ spaced ]" would incorrectly become "[spaced]"
+    # The python-frontmatter TOML library already handles spacing correctly.
 
     # Remove blank line before closing (if present)
-    content = re.sub(r"\n\n+$", "\n", content)
-
-    return content
+    return re.sub(r"\n\n+$", "\n", content)
 
 
 def _strip_delimiters(formatted: str, delimiter: str) -> str:
@@ -82,6 +81,9 @@ def _format_with_handler(
     Returns:
         Formatted front matter.
 
+    Raises:
+        ValueError: When metadata contains no valid key-value pairs.
+
     """
     # Parse the content
     metadata, _ = frontmatter.parse(
@@ -114,14 +116,21 @@ def _format_with_handler(
     return formatted.rstrip("\n")
 
 
-def format_yaml(content: str) -> str:
+def format_yaml(content: str, *, strict: bool = False) -> str:
     """Format YAML front matter content.
 
     Args:
         content: Raw YAML string to format.
+        strict: If True, raise exceptions instead of preserving original.
 
     Returns:
-        Formatted YAML string, or original content if formatting fails.
+        Formatted YAML string, or original content if formatting fails
+        in non-strict mode.
+
+    Raises:
+        ValueError: In strict mode when content has no valid key-value pairs.
+        TypeError: In strict mode when content has invalid types.
+        AttributeError: In strict mode when content structure is invalid.
 
     """
     try:
@@ -133,20 +142,31 @@ def format_yaml(content: str) -> str:
         )
     except (ValueError, TypeError, AttributeError) as e:
         logger.debug("Failed to format YAML front matter: %s", e)
+        if strict:
+            raise
         return content
     except Exception as e:  # Catch any other parsing errors
         logger.warning("Unexpected error formatting YAML front matter: %s", e)
+        if strict:
+            raise
         return content
 
 
-def format_toml(content: str) -> str:
+def format_toml(content: str, *, strict: bool = False) -> str:
     """Format TOML front matter content.
 
     Args:
         content: Raw TOML string to format.
+        strict: If True, raise exceptions instead of preserving original.
 
     Returns:
-        Formatted TOML string, or original content if formatting fails.
+        Formatted TOML string, or original content if formatting fails
+        in non-strict mode.
+
+    Raises:
+        ValueError: In strict mode when content has no valid key-value pairs.
+        TypeError: In strict mode when content has invalid types.
+        AttributeError: In strict mode when content structure is invalid.
 
     """
     try:
@@ -160,20 +180,31 @@ def format_toml(content: str) -> str:
         return _normalize_toml_output(formatted)
     except (ValueError, TypeError, AttributeError) as e:
         logger.debug("Failed to format TOML front matter: %s", e)
+        if strict:
+            raise
         return content
     except Exception as e:  # Catch any other parsing errors
         logger.warning("Unexpected error formatting TOML front matter: %s", e)
+        if strict:
+            raise
         return content
 
 
-def format_json(content: str) -> str:
+def format_json(content: str, *, strict: bool = False) -> str:
     """Format JSON front matter content.
 
     Args:
         content: Raw JSON string to format.
+        strict: If True, raise exceptions instead of preserving original.
 
     Returns:
-        Formatted JSON string, or original content if formatting fails.
+        Formatted JSON string, or original content if formatting fails
+        in non-strict mode.
+
+    Raises:
+        ValueError: In strict mode when content has no valid key-value pairs.
+        TypeError: In strict mode when content has invalid types.
+        AttributeError: In strict mode when content structure is invalid.
 
     """
     try:
@@ -185,7 +216,11 @@ def format_json(content: str) -> str:
         )
     except (ValueError, TypeError, AttributeError) as e:
         logger.debug("Failed to format JSON front matter: %s", e)
+        if strict:
+            raise
         return content
     except Exception as e:  # Catch any other parsing errors
         logger.warning("Unexpected error formatting JSON front matter: %s", e)
+        if strict:
+            raise
         return content
