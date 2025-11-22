@@ -23,7 +23,7 @@ license-files = ["LICENSE"]
 name = "mdformat_front_matters"
 readme = "README.md"
 requires-python = ">=3.10.0"
-version = "0.0.1"
+version = "0.1.0"
 
 [project.entry-points."mdformat.parser_extension"]
 front_matters = "mdformat_front_matters"
@@ -42,7 +42,7 @@ homepage = "https://github.com/kyleking/mdformat-front-matters"
 
 [tool.commitizen]
 tag_format = "v${version}"
-version = "0.0.1"
+version = "0.1.0"
 version_files = ["mdformat_front_matters/__init__.py", "pyproject.toml:^version"]
 
 [tool.mypy]
@@ -150,32 +150,32 @@ inline_arrays = false
 
 [tool.tox]
 # Docs: https://tox.wiki/en/4.23.2/config.html#core
-basepython = ["python3.10", "python3.14"]
+basepython = ["py310", "py314"]
 env_list = ["cz", "hook-min", "prek", "ruff", "test", "test-min", "type"]
 isolated_build = true
 requires = ["tox>=4.32.0"]
 skip_missing_interpreters = false
 
 [tool.tox.env.cz]
-basepython = "python3.14"
+basepython = ["py314"]
 commands = [["cz", "bump", {default = [], extend = true, replace = "posargs"}]]
 deps = "commitizen>=4.10.0"
 description = "Bump version using commitizen. Optionally specify: '-- --increment MAJOR|MINOR|PATCH' or '-- --dry-run'"
 skip_install = true
 
 [tool.tox.env."hook-min"]
-basepython = "python3.10"
+basepython = ["py310"]
 commands = [["prek", "run", "--config=.pre-commit-test.yaml", "--all-files", {default = ["--show-diff-on-failure", "--verbose"], extend = true, replace = "posargs"}]]
 deps = "prek>=0.2.17"
 
 [tool.tox.env.prek]
-basepython = "python3.14"
+basepython = ["py314"]
 commands = [["prek", "run", "--all-files", {default = [], extend = true, replace = "posargs"}]]
 deps = "prek>=0.2.17"
 skip_install = true
 
 [tool.tox.env.ruff]
-basepython = "python3.14"
+basepython = ["py314"]
 commands = [
   ["ruff", "check", ".", "--fix", {default = [], extend = true, replace = "posargs"}],
   ["ruff", "format", "."],
@@ -185,7 +185,7 @@ description = "Optionally, specify: '-- --unsafe-fixes'"
 skip_install = true
 
 [tool.tox.env.test]
-basepython = "python3.14"
+basepython = ["py314"]
 commands = [["pytest", "--cov=mdformat_front_matters", {default = [], extend = true, replace = "posargs"}]]
 # PLANNED: requires support for TYPE_CHECKING https://github.com/beartype/beartype/issues/477
 # description = "Optionally, specify: '-- --exitfirst --failed-first --new-first -vv --beartype-packages=mdformat_front_matters"
@@ -193,12 +193,12 @@ description = "Optionally, specify: '-- --exitfirst --failed-first --new-first -
 extras = ["test"]
 
 [tool.tox.env."test-min"]
-basepython = "python3.10"
+basepython = ["py310"]
 commands = [["pytest", "--cov=mdformat_front_matters"]]
 extras = ["test"]
 
 [tool.tox.env.type]
-basepython = "python3.14"
+basepython = ["py314"]
 commands = [["mypy", "./mdformat_front_matters", {default = [], extend = true, replace = "posargs"}]]
 deps = ["mypy>=1.18.2"]
 
