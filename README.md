@@ -55,7 +55,7 @@ tags = ["example", "demo"]
 
 Add this package wherever you use `mdformat` and the plugin will be auto-recognized. No additional configuration necessary. See [additional information on `mdformat` plugins here](https://mdformat.readthedocs.io/en/stable/users/plugins.html)
 
-### Pre-Commit
+### pre-commit / prek
 
 ```yaml
 repos:
@@ -67,17 +67,17 @@ repos:
           - mdformat-front-matters
 ```
 
-### pipx/uv
+### uvx
+
+```sh
+uvx --from mdformat-front-matters mdformat
+```
+
+Or with pipx:
 
 ```sh
 pipx install mdformat
 pipx inject mdformat mdformat-front-matters
-```
-
-Or with uv:
-
-```sh
-uv tool run --from mdformat-front-matters mdformat
 ```
 
 ### Configuration Options

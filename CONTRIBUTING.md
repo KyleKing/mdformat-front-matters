@@ -9,13 +9,13 @@ A collection of useful resources to reference when developing new features:
 
 ## Local Development
 
-This package utilizes [flit](https://flit.readthedocs.io) as the build engine, and [tox](https://tox.readthedocs.io) for test automation.
+This package utilizes [uv](https://docs.astral.sh/uv) as the build engine, and [tox](https://tox.readthedocs.io) for test automation.
 
 To install these development dependencies:
 
 ```bash
-pipx install tox
-# or: uv tool install tox --with tox-uv
+uv tool install tox --with tox-uv
+# or: pipx install tox
 ```
 
 To run the tests:
@@ -27,7 +27,7 @@ tox
 and with test coverage:
 
 ```bash
-tox -e py39-cov
+tox -e test
 ```
 
 The easiest way to write tests, is to edit `tests/fixtures.md`
@@ -35,21 +35,23 @@ The easiest way to write tests, is to edit `tests/fixtures.md`
 To run the code formatting and style checks:
 
 ```bash
-tox -e py312-pre-commit
+tox -e prek
 ```
 
-or directly
+or directly with [prek](https://github.com/j178/prek) (or pre-commit)
 
 ```bash
-pipx install pre-commit
-# or: uv tool install pre-commit
-pre-commit run --all
+uv tool install prek
+# or: pipx install prek, brew install prek, etc.
+
+prek install -f
+prek run --all
 ```
 
 To run the pre-commit hook test:
 
 ```bash
-tox -e py39-hook
+tox -e hook-min
 ```
 
 ## `ptw` testing
@@ -57,40 +59,63 @@ tox -e py39-hook
 See configuration in `pyproject.toml` for `[tool.pytest-watcher]`
 
 ```sh
-pipx install pytest-watcher
+uv tool install pytest-watcher
+# or: pipx install pytest-watcher
 
 ptw .
 ```
 
-## Local pipx testing
+## Local uv/pipx testing
 
-Run the latest local code anywhere with pipx.
+Run the latest local code anywhere with uv tool.
+
+```sh
+uv tool install . --editable --force --with="mdformat>=0.7.19"
+```
+
+Or with pipx:
 
 ```sh
 pipx install . --include-deps --force --editable
 ```
 
-Or with uv:
+## Publish to PyPI
+
+This project uses [PyPI Trusted Publishers](https://docs.pypi.org/trusted-publishers) for secure, token-free publishing from GitHub Actions, with [uv](https://docs.astral.sh/uv) for building packages.
+
+### Initial Setup (One-time)
+
+Before publishing for the first time, you need to configure Trusted Publishing on PyPI:
+
+1. Go to your project's page on PyPI: `https://pypi.org/manage/project/mdformat_front_matters/settings/publishing/`
+    - If the project doesn't exist yet, go to [PyPI's publishing page](https://pypi.org/manage/account/publishing) to add a "pending" publisher
+1. Add a new Trusted Publisher with these settings:
+    - **PyPI Project Name**: `mdformat_front_matters`
+    - **Owner**: `kyleking`
+    - **Repository name**: `mdformat-front-matters`
+    - **Workflow name**: `tests.yml` (`.github/workflows/tests.yml`)
+    - **Environment name**: `pypi`
+1. Configure the GitHub Environment:
+    - Go to your repository's `Settings` → `Environments`
+    - Create an environment named `pypi`
+    - (Recommended) Enable "Required reviewers" for production safety
+
+### Publishing a Release
+
+Use `commitizen` to automatically bump versions (in `pyproject.toml` and `mdformat_front_matters/__init__.py`) and create a commit with tag:
 
 ```sh
-uv tool install mdformat --force --with-editable=.
+# Dry run to preview the version bump
+tox -e cz -- --dry-run
+
+# Automatically bump version based on conventional commits
+tox -e cz
+
+# Or manually specify the increment type
+tox -e cz -- --increment PATCH  # or MINOR or MAJOR
+
+# Push the commit and tag
+git push origin main --tags
 ```
 
-## Publish to PyPi
-
-First, update the version in `mdformat_front_matters/__init__.py`
-
-Then, either use the Github Action by committing the new version in `__init__.py` and pushing an associated tag in format: `v#.#.#` (e.g. `v1.3.2` for `__version__ = '1.3.2'`)
-
-Or run flit locally:
-
-```bash
-# envchain --set FLIT FLIT_PASSWORD
-export FLIT_USERNAME=__token__
-export eval $(envchain FLIT env | grep FLIT_PASSWORD=)
-
-flit publish
-```
-
-> [!NOTE]
-> The Github Action requires generating an API key on PyPi and adding it to the repository `Settings/Secrets`, under the name `PYPI_KEY`
+The GitHub Action will automatically build and publish to PyPI using Trusted Publishers (no API tokens needed!).
