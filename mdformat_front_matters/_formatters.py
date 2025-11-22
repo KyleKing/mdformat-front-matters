@@ -27,8 +27,9 @@ def _normalize_toml_output(content: str) -> str:
     # but NOT array tables [[section]] - they should keep blank lines
     content = re.sub(r"\n\n+(\[(?!\[))", r"\n\1", content)
 
-    # Remove trailing commas in arrays (e.g., ["a", "b",] -> ["a", "b"])
-    content = re.sub(r",(\s*])", r"\1", content)
+    # Remove trailing commas in arrays - handle both ,] and , ]
+    # This handles: ["a", "b",] and ["a", "b", ] formats
+    content = re.sub(r",\s*]", "]", content)
 
     # NOTE: We do NOT normalize array spacing (e.g., [ "item" -> ["item"])
     # because regex-based approach would corrupt bracket spacing inside strings.
