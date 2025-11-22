@@ -6,71 +6,64 @@ A collection of useful resources to reference when developing new features:
 
 - [`markdown-it-py` documentation](https://markdown-it-py.readthedocs.io/en/latest/using.html)
 - [`markdown-it` (JS) documentation](https://markdown-it.github.io/markdown-it)
+- [`mdformat` documentation](https://mdformat.readthedocs.io/en/stable)
 
 ## Local Development
 
-This package utilizes [uv](https://docs.astral.sh/uv) as the build engine, and [tox](https://tox.readthedocs.io) for test automation.
+This package utilizes [mise](https://mise.jdx.dev) ([installation guide](https://github.com/jdx/mise/blob/79367a4d382d8ab4cb76afef357d0db4afa33866/docs/installing-mise.md)) for dependency management, [prek](https://github.com/j178/prek) for fast pre-commit hooks, [uv](https://docs.astral.sh/uv) as the build engine, and [tox](https://tox.readthedocs.io) for test automation.
 
-To install these development dependencies:
+To install the development dependencies:
 
 ```bash
-uv tool install tox --with tox-uv
-# or: pipx install tox
+brew install mise  # or see the installation alternatives above
+
+# Install dependencies from mist.toml
+mise trust
+mise install
+
+# Configure prek
+prek install -f
 ```
 
-To run the tests:
+To run all tox environments:
 
 ```bash
 tox
 ```
 
-and with test coverage:
+or to run specific commands:
 
 ```bash
 tox -e test
-```
-
-The easiest way to write tests, is to edit `tests/fixtures.md`
-
-To run the code formatting and style checks:
-
-```bash
 tox -e prek
+tox -e hook-min
+
+tox list
 ```
 
-or directly with [prek](https://github.com/j178/prek) (or pre-commit)
+To run all pre-commit steps:
 
-```bash
-uv tool install prek
-# or: pipx install prek, brew install prek, etc.
-
-prek install -f
+```sh
 prek run --all
 ```
 
-To run the pre-commit hook test:
-
-```bash
-tox -e hook-min
-```
-
-## `ptw` testing
-
-See configuration in `pyproject.toml` for `[tool.pytest-watcher]`
+`pytest-watcher` is configured in `pyproject.toml` for `[tool.pytest-watcher]` to continuously run tests
 
 ```sh
-uv tool install pytest-watcher
-# or: pipx install pytest-watcher
-
 ptw .
 ```
 
-## Local uv/pipx testing
+## Local uv/pipx integration testing
 
-Run the latest local code anywhere with uv tool.
+Run the local code with `uv tool` (requires `uv` installed globally and first in `$PATH`, e.g. `brew install uv` or `mise use uv --global`)
 
 ```sh
-uv tool install . --editable --force --with="mdformat>=0.7.19"
+uv tool install 'mdformat>=0.7.19' --force --with=.
+
+# Then navigate to a different directory and check that the editable version was installed
+cd ~
+mdformat --version
+which mdformat
 ```
 
 Or with pipx:
