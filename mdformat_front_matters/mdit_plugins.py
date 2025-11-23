@@ -27,7 +27,6 @@ def front_matters_plugin(md: MarkdownIt) -> None:
 
     Args:
         md: The markdown-it parser instance to modify.
-
     """
     md.block.ruler.before(
         "fence",
@@ -59,7 +58,6 @@ def _render_front_matter_html(
 
     Returns:
         Empty string.
-
     """
     return ""
 
@@ -80,7 +78,6 @@ def _front_matter_rule(  # noqa: C901, PLR0914
 
     Returns:
         True if front matter was found and parsed, False otherwise.
-
     """
     # Front matter must be at the start of the document
     if start_line != 0:
@@ -167,7 +164,7 @@ def _front_matter_rule(  # noqa: C901, PLR0914
     return True
 
 
-def _parse_json_front_matter(  # noqa: C901
+def _parse_json_front_matter(
     state: StateBlock,
     start_line: int,
     end_line: int,
@@ -183,7 +180,6 @@ def _parse_json_front_matter(  # noqa: C901
 
     Returns:
         True if JSON front matter was found and parsed, False otherwise.
-
     """
     # Find the closing brace
     pos = state.bMarks[start_line] + state.tShift[start_line]
@@ -194,7 +190,7 @@ def _parse_json_front_matter(  # noqa: C901
     escape_next = False
 
     # Collect lines until we find the closing brace
-    while next_line < end_line:  # noqa: PLR1702
+    while next_line < end_line:
         pos = state.bMarks[next_line] + state.tShift[next_line]
         maximum = state.eMarks[next_line]
         line_content = state.src[pos:maximum]
@@ -202,36 +198,131 @@ def _parse_json_front_matter(  # noqa: C901
         content_lines.append(line_content)
 
         # Count braces to find the closing one, respecting string context
-        for char in line_content:
-            if escape_next:
-                escape_next = False
-                continue
+        if _found_closing_brace(line_content, brace_count, in_string, escape_next):
+            if not silent:
+                _create_front_matter_token(
+                    state,
+                    content_lines,
+                    start_line,
+                    next_line,
+                )
 
-            if char == "\\":
-                escape_next = True
-                continue
+            state.line = next_line + 1
+            return True
 
-            if char == '"' and not escape_next:
-                in_string = not in_string
-            elif not in_string:
-                if char == "{":
-                    brace_count += 1
-                elif char == "}":
-                    brace_count -= 1
-                    if brace_count == 0:
-                        # Found closing brace
-                        if not silent:
-                            content = "\n".join(content_lines)
-                            token = state.push("front_matter", "", 0)
-                            token.content = content
-                            token.markup = ""
-                            token.map = [start_line, next_line + 1]
-                            token.meta = {"format": "json"}
-
-                        state.line = next_line + 1
-                        return True
+        # Update state after processing the line
+        brace_count, in_string, escape_next = _update_json_parse_state(
+            line_content,
+            brace_count,
+            in_string,
+            escape_next,
+        )
 
         next_line += 1
 
     # No closing brace found
     return False
+
+
+def _found_closing_brace(
+    line_content: str,
+    brace_count: int,
+    in_string: bool,
+    escape_next: bool,
+) -> bool:
+    """Check if the closing brace was found in the line.
+
+    Args:
+        line_content: The line content to check.
+        brace_count: Current brace count.
+        in_string: Whether we're currently inside a string.
+        escape_next: Whether the next character should be escaped.
+
+    Returns:
+        True if closing brace was found, False otherwise.
+    """
+    temp_count = brace_count
+    temp_in_string = in_string
+    temp_escape = escape_next
+
+    for char in line_content:
+        if temp_escape:
+            temp_escape = False
+            continue
+        if char == "\\":
+            temp_escape = True
+            continue
+        if char == '"':
+            temp_in_string = not temp_in_string
+            continue
+        if temp_in_string:
+            continue
+
+        if char == "{":
+            temp_count += 1
+        elif char == "}":
+            temp_count -= 1
+            if temp_count == 0:
+                return True
+
+    return False
+
+
+def _update_json_parse_state(
+    line_content: str,
+    brace_count: int,
+    in_string: bool,
+    escape_next: bool,
+) -> tuple[int, bool, bool]:
+    """Update the JSON parsing state after processing a line.
+
+    Args:
+        line_content: The line content to process.
+        brace_count: Current brace count.
+        in_string: Whether we're currently inside a string.
+        escape_next: Whether the next character should be escaped.
+
+    Returns:
+        Tuple of (updated_brace_count, updated_in_string, updated_escape_next).
+    """
+    for char in line_content:
+        if escape_next:
+            escape_next = False
+            continue
+        if char == "\\":
+            escape_next = True
+            continue
+        if char == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+
+        if char == "{":
+            brace_count += 1
+        elif char == "}":
+            brace_count -= 1
+
+    return brace_count, in_string, escape_next
+
+
+def _create_front_matter_token(
+    state: StateBlock,
+    content_lines: list[str],
+    start_line: int,
+    next_line: int,
+) -> None:
+    """Create a front matter token for JSON format.
+
+    Args:
+        state: The current parser state.
+        content_lines: Lines of content to include in the token.
+        start_line: Starting line number.
+        next_line: Current line number.
+    """
+    content = "\n".join(content_lines)
+    token = state.push("front_matter", "", 0)
+    token.content = content
+    token.markup = ""
+    token.map = [start_line, next_line + 1]
+    token.meta = {"format": "json"}

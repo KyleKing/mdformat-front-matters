@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Generator
+from contextlib import contextmanager
 from typing import Any
 
 import frontmatter  # type: ignore[import-untyped]
@@ -11,8 +13,33 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
+SPECIAL_YAML_CHARS = {
+    ":",
+    "{",
+    "}",
+    "[",
+    "]",
+    ",",
+    "&",
+    "*",
+    "#",
+    "?",
+    "|",
+    "-",
+    "<",
+    ">",
+    "=",
+    "!",
+    "%",
+    "@",
+    "`",
+    '"',
+    "'",
+}
+"""These characters require quoting: : { } [ ] , & * # ? | - < > = ! % @ `."""
 
-class _UnicodePreservingYAMLHandler(frontmatter.YAMLHandler):  # type: ignore[misc]
+
+class _UnicodePreservingYAMLHandler(frontmatter.YAMLHandler):
     """Custom YAML handler that preserves unicode characters without escaping.
 
     This handler extends the default YAMLHandler to use a custom dumper
@@ -20,7 +47,7 @@ class _UnicodePreservingYAMLHandler(frontmatter.YAMLHandler):  # type: ignore[mi
     rather than escaping them.
     """
 
-    def export(self, metadata: dict[str, object], **kwargs: object) -> str:
+    def export(self, metadata: dict[str, object], **kwargs: object) -> str:  # noqa: PLR6301
         """Export metadata as YAML with unicode preservation.
 
         Args:
@@ -29,12 +56,9 @@ class _UnicodePreservingYAMLHandler(frontmatter.YAMLHandler):  # type: ignore[mi
 
         Returns:
             YAML string with preserved unicode characters.
-
         """
-        # Use a custom dumper that preserves unicode
-        from yaml import SafeDumper
 
-        class UnicodePreservingDumper(SafeDumper):
+        class UnicodePreservingDumper(yaml.SafeDumper):
             """Custom YAML dumper that preserves unicode in plain style."""
 
         def str_representer(dumper: Any, data: str) -> Any:  # noqa: ANN401
@@ -45,12 +69,7 @@ class _UnicodePreservingYAMLHandler(frontmatter.YAMLHandler):  # type: ignore[mi
             with special YAML characters.
             """
             # Check if the string needs quoting (has special YAML characters)
-            # These characters require quoting: : { } [ ] , & * # ? | - < > = ! % @ `
-            needs_quoting = any(
-                char in data
-                for char in [':', '{', '}', '[', ']', ',', '&', '*', '#', '?',
-                            '|', '-', '<', '>', '=', '!', '%', '@', '`', '"', "'"]
-            )
+            needs_quoting = any(char in data for char in SPECIAL_YAML_CHARS)
 
             # Also check for leading/trailing whitespace or special patterns
             if (
@@ -71,8 +90,7 @@ class _UnicodePreservingYAMLHandler(frontmatter.YAMLHandler):  # type: ignore[mi
         kwargs.setdefault("default_flow_style", False)
         kwargs.setdefault("allow_unicode", True)
 
-        metadata_str = yaml.dump(metadata, **kwargs).strip()  # type: ignore[call-overload]
-        return metadata_str
+        return yaml.dump(metadata, **kwargs).strip()  # type: ignore[call-overload]
 
 
 def _normalize_toml_output(content: str) -> str:
@@ -85,7 +103,6 @@ def _normalize_toml_output(content: str) -> str:
 
     Returns:
         Normalized TOML content.
-
     """
     # Remove blank lines before section headers like [section]
     # but NOT array tables [[section]] - they should keep blank lines
@@ -125,8 +142,59 @@ def _strip_delimiters(formatted: str, delimiter: str) -> str:
         return formatted[: -len(end_with_nl)].rstrip("\n")
     if formatted.endswith(end_no_nl):
         return formatted[: -len(end_no_nl)].rstrip("\n")
-
     return formatted.rstrip("\n")
+
+
+class FormatError(Exception):
+    """Exception raised when formatting fails and original content should be returned."""
+
+    def __init__(self, content: str) -> None:
+        """Initialize with original content to return.
+
+        Args:
+            content: Original content to return on formatting failure.
+        """
+        super().__init__()
+        self.content = content
+
+
+@contextmanager
+def _handle_format_errors(
+    content: str,
+    format_type: str,
+    *,
+    strict: bool,
+) -> Generator[None, None, None]:
+    """Handle errors during front matter formatting.
+
+    Args:
+        content: Original content to return if formatting fails.
+        format_type: Type of format being processed (e.g., 'YAML', 'TOML').
+        strict: If True, raise exceptions instead of preserving original.
+
+    Yields:
+        None
+
+    Raises:
+        FormatError: When formatting fails in non-strict mode (contains original content).
+        ValueError: Re-raised in strict mode from parsing/validation failures.
+        TypeError: Re-raised in strict mode from invalid content types.
+        AttributeError: Re-raised in strict mode from invalid content structure.
+    """
+    try:
+        yield
+    except (ValueError, TypeError, AttributeError) as e:
+        logger.debug("Failed to format %s front matter: %s", format_type, e)
+        if strict:
+            raise
+        raise FormatError(content) from e
+    except Exception as e:
+        logger.warning(
+            "Unexpected error formatting %s front matter: %s", format_type, e
+        )
+        if strict:
+            raise
+        raise FormatError(content) from e
 
 
 def _format_with_handler(
@@ -148,7 +216,6 @@ def _format_with_handler(
 
     Raises:
         ValueError: When metadata contains no valid key-value pairs.
-
     """
     # Parse the content
     metadata, _ = frontmatter.parse(
@@ -169,7 +236,6 @@ def _format_with_handler(
     # Strip delimiters based on format type
     if delimiter:
         return _strip_delimiters(formatted, delimiter)
-
     # JSON special handling: extract inner content
     if formatted.startswith("{\n") and formatted.endswith("\n}\n"):
         lines = formatted.split("\n")
@@ -177,7 +243,6 @@ def _format_with_handler(
             inner = "\n".join(lines[1:-2])
             if inner.strip():
                 return f"{{\n{inner}\n}}"
-
     return formatted.rstrip("\n")
 
 
@@ -191,30 +256,17 @@ def format_yaml(content: str, *, strict: bool = False) -> str:
     Returns:
         Formatted YAML string, or original content if formatting fails
         in non-strict mode.
-
-    Raises:
-        ValueError: In strict mode when content has no valid key-value pairs.
-        TypeError: In strict mode when content has invalid types.
-        AttributeError: In strict mode when content structure is invalid.
-
     """
     try:
-        return _format_with_handler(
-            content,
-            _UnicodePreservingYAMLHandler(),
-            "---\n{content}\n---\n",
-            "---",
-        )
-    except (ValueError, TypeError, AttributeError) as e:
-        logger.debug("Failed to format YAML front matter: %s", e)
-        if strict:
-            raise
-        return content
-    except Exception as e:  # Catch any other parsing errors
-        logger.warning("Unexpected error formatting YAML front matter: %s", e)
-        if strict:
-            raise
-        return content
+        with _handle_format_errors(content, "YAML", strict=strict):
+            return _format_with_handler(
+                content,
+                _UnicodePreservingYAMLHandler(),
+                "---\n{content}\n---\n",
+                "---",
+            )
+    except FormatError as e:
+        return e.content
 
 
 def format_toml(content: str, *, strict: bool = False) -> str:
@@ -227,32 +279,18 @@ def format_toml(content: str, *, strict: bool = False) -> str:
     Returns:
         Formatted TOML string, or original content if formatting fails
         in non-strict mode.
-
-    Raises:
-        ValueError: In strict mode when content has no valid key-value pairs.
-        TypeError: In strict mode when content has invalid types.
-        AttributeError: In strict mode when content structure is invalid.
-
     """
     try:
-        formatted = _format_with_handler(
-            content,
-            frontmatter.TOMLHandler(),
-            "+++\n{content}\n+++\n",
-            "+++",
-        )
-        # Normalize TOML output to remove extra blank lines and trailing commas
-        return _normalize_toml_output(formatted)
-    except (ValueError, TypeError, AttributeError) as e:
-        logger.debug("Failed to format TOML front matter: %s", e)
-        if strict:
-            raise
-        return content
-    except Exception as e:  # Catch any other parsing errors
-        logger.warning("Unexpected error formatting TOML front matter: %s", e)
-        if strict:
-            raise
-        return content
+        with _handle_format_errors(content, "TOML", strict=strict):
+            formatted = _format_with_handler(
+                content,
+                frontmatter.TOMLHandler(),
+                "+++\n{content}\n+++\n",
+                "+++",
+            )
+            return _normalize_toml_output(formatted)
+    except FormatError as e:
+        return e.content
 
 
 def format_json(content: str, *, strict: bool = False) -> str:
@@ -265,27 +303,14 @@ def format_json(content: str, *, strict: bool = False) -> str:
     Returns:
         Formatted JSON string, or original content if formatting fails
         in non-strict mode.
-
-    Raises:
-        ValueError: In strict mode when content has no valid key-value pairs.
-        TypeError: In strict mode when content has invalid types.
-        AttributeError: In strict mode when content structure is invalid.
-
     """
     try:
-        return _format_with_handler(
-            content,
-            frontmatter.JSONHandler(),
-            "{content}\n",
-            None,  # JSON has no delimiters
-        )
-    except (ValueError, TypeError, AttributeError) as e:
-        logger.debug("Failed to format JSON front matter: %s", e)
-        if strict:
-            raise
-        return content
-    except Exception as e:  # Catch any other parsing errors
-        logger.warning("Unexpected error formatting JSON front matter: %s", e)
-        if strict:
-            raise
-        return content
+        with _handle_format_errors(content, "JSON", strict=strict):
+            return _format_with_handler(
+                content,
+                frontmatter.JSONHandler(),
+                "{content}\n",
+                None,  # JSON has no delimiters
+            )
+    except FormatError as e:
+        return e.content

@@ -1,4 +1,4 @@
-A test
+Content without front matter
 .
 - Item
 .
@@ -7,7 +7,7 @@ A test
 </ul>
 .
 
-TODO: Render Hugo TOML front matter example
+Render Hugo TOML front matter example
 .
 +++
 title = "Example"
@@ -18,7 +18,7 @@ draft = false
 <h1>Example</h1>
 .
 
-TODO: Render Hugo YAML front matter example
+Render Hugo YAML front matter example
 .
 ---
 title: Example
@@ -29,7 +29,7 @@ draft: false
 <h1>Example</h1>
 .
 
-TODO: Render Hugo JSON front matter example
+Render Hugo JSON front matter example
 .
 {
 "title": "Example",

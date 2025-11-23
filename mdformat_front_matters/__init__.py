@@ -1,6 +1,6 @@
 """An mdformat plugin for `front_matters`."""
 
-__version__ = "0.1.0"
+__version__ = "0.0.1"
 
 __plugin_name__ = "front_matters"
 
