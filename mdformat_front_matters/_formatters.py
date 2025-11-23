@@ -7,8 +7,72 @@ import re
 from typing import Any
 
 import frontmatter  # type: ignore[import-untyped]
+import yaml
 
 logger = logging.getLogger(__name__)
+
+
+class _UnicodePreservingYAMLHandler(frontmatter.YAMLHandler):  # type: ignore[misc]
+    """Custom YAML handler that preserves unicode characters without escaping.
+
+    This handler extends the default YAMLHandler to use a custom dumper
+    that outputs unicode characters (including emojis) in their original form
+    rather than escaping them.
+    """
+
+    def export(self, metadata: dict[str, object], **kwargs: object) -> str:
+        """Export metadata as YAML with unicode preservation.
+
+        Args:
+            metadata: Dictionary to export as YAML.
+            **kwargs: Additional arguments passed to yaml.dump.
+
+        Returns:
+            YAML string with preserved unicode characters.
+
+        """
+        # Use a custom dumper that preserves unicode
+        from yaml import SafeDumper
+
+        class UnicodePreservingDumper(SafeDumper):
+            """Custom YAML dumper that preserves unicode in plain style."""
+
+        def str_representer(dumper: Any, data: str) -> Any:  # noqa: ANN401
+            """Represent strings with unicode preservation.
+
+            Uses plain style for simple strings with unicode to preserve emojis
+            and other unicode characters. Falls back to quoted style for strings
+            with special YAML characters.
+            """
+            # Check if the string needs quoting (has special YAML characters)
+            # These characters require quoting: : { } [ ] , & * # ? | - < > = ! % @ `
+            needs_quoting = any(
+                char in data
+                for char in [':', '{', '}', '[', ']', ',', '&', '*', '#', '?',
+                            '|', '-', '<', '>', '=', '!', '%', '@', '`', '"', "'"]
+            )
+
+            # Also check for leading/trailing whitespace or special patterns
+            if (
+                needs_quoting
+                or data != data.strip()
+                or len(data.splitlines()) > 1
+                or not data
+            ):
+                # Let YAML choose the appropriate quoted style
+                return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+            # Use plain style for simple strings to preserve unicode
+            return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="")
+
+        UnicodePreservingDumper.add_representer(str, str_representer)
+
+        kwargs.setdefault("Dumper", UnicodePreservingDumper)
+        kwargs.setdefault("default_flow_style", False)
+        kwargs.setdefault("allow_unicode", True)
+
+        metadata_str = yaml.dump(metadata, **kwargs).strip()  # type: ignore[call-overload]
+        return metadata_str
 
 
 def _normalize_toml_output(content: str) -> str:
@@ -137,7 +201,7 @@ def format_yaml(content: str, *, strict: bool = False) -> str:
     try:
         return _format_with_handler(
             content,
-            frontmatter.YAMLHandler(),
+            _UnicodePreservingYAMLHandler(),
             "---\n{content}\n---\n",
             "---",
         )
