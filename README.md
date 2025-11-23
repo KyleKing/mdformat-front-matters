@@ -2,7 +2,10 @@
 
 [![Build Status][ci-badge]][ci-link] [![PyPI version][pypi-badge]][pypi-link]
 
-An [mdformat](https://github.com/executablebooks/mdformat) plugin for normalizing YAML, TOML, and JSON front matter in CommonMark documents
+An [mdformat](https://github.com/executablebooks/mdformat) plugin for normalizing YAML, TOML, and JSON front matter in CommonMark documents thanks to [eyeseast/python-](https://github.com/eyeseast/python-frontmatter)!
+
+> [!NOTE]
+> [`mdformat-frontmatter`](https://github.com/butler54/mdformat-frontmatter) has additional duplicate key detection, but did not support mdformat v1 (https://github.com/butler54/mdformat-frontmatter/issues/37](https://github.com/butler54/mdformat-frontmatter/issues/37)) nor TOML and JSON at the time (https://github.com/butler54/mdformat-frontmatter/issues/22#issuecomment-1815433725). Along with the 's', the extra dash is intentional to try to prevent typo errors.
 
 ## Features
 
@@ -159,7 +162,7 @@ md.render(text)
 
 See [CONTRIBUTING.md](https://github.com/kyleking/mdformat-front-matters/blob/main/CONTRIBUTING.md) and [Repository Guidelines](./AGENTS.md).
 
-[ci-badge]: https://github.com/kyleking/mdformat-front-matters/workflows/CI/badge.svg?branch=main
+[ci-badge]: https://github.com/kyleking/mdformat-front-matters/actions/workflows/tests.yml/badge.svg?branch=main
 [ci-link]: https://github.com/kyleking/mdformat-front-matters/actions?query=workflow%3ACI+branch%3Amain+event%3Apush
 [pypi-badge]: https://img.shields.io/pypi/v/mdformat-front-matters.svg
 [pypi-link]: https://pypi.org/project/mdformat-front-matters
