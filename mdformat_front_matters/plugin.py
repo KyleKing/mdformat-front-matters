@@ -28,6 +28,14 @@ def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
             "Useful for CI/CD pipelines to catch formatting errors."
         ),
     )
+    group.add_argument(
+        "--no-sort-front-matter",
+        action="store_true",
+        help=(
+            "Do not sort front matter keys. Preserve the original key order. "
+            "By default, keys are sorted alphabetically for consistency."
+        ),
+    )
 
 
 def update_mdit(mdit: MarkdownIt) -> None:
@@ -55,14 +63,18 @@ def _render_front_matter(node: RenderTreeNode, context: RenderContext) -> str:
     # Note: argparse converts hyphens to underscores, so --strict-front-matter
     # is stored as "strict_front_matter" in the options dict
     strict = bool(get_conf(context.options, "strict_front_matter"))
+    # Check if sorting is disabled
+    # Note: argparse converts hyphens to underscores, so --no-sort-front-matter
+    # is stored as "no_sort_front_matter" in the options dict
+    sort_keys = not bool(get_conf(context.options, "no_sort_front_matter"))
 
     # Format the content based on type
     if format_type == "yaml":
-        formatted_content = format_yaml(content, strict=strict)
+        formatted_content = format_yaml(content, strict=strict, sort_keys=sort_keys)
     elif format_type == "toml":
-        formatted_content = format_toml(content, strict=strict)
+        formatted_content = format_toml(content, strict=strict, sort_keys=sort_keys)
     elif format_type == "json":
-        formatted_content = format_json(content, strict=strict)
+        formatted_content = format_json(content, strict=strict, sort_keys=sort_keys)
     else:
         # Unknown format, return as-is
         formatted_content = content

@@ -7,8 +7,9 @@ An [mdformat](https://github.com/executablebooks/mdformat) plugin for normalizin
 ## Features
 
 - **Multi-format support**: Handles YAML (`---`), TOML (`+++`), and JSON (`{...}`) front matter
-- **Automatic normalization**: Formats front matter consistently (sorted keys, standardized indentation)
-- **Error resilient**: Preserves original content if parsing fails
+- **Automatic normalization**: Formats front matter consistently (sorted keys by default, standardized indentation)
+- **Configurable sorting**: Option to preserve original key order with `--no-sort-front-matter`
+- **Error resilient**: Preserves original content if parsing fails. Will error only if `strict` mode is set
 - **Zero configuration**: Works out of the box with mdformat
 
 ## Examples
@@ -22,6 +23,20 @@ date: 2024-01-01
 tags:
   - example
   - demo
+---
+
+# Content
+```
+
+Becomes:
+
+```markdown
+---
+date: 2024-01-01
+tags:
+  - example
+  - demo
+title: My Document
 ---
 
 # Content
@@ -82,12 +97,24 @@ pipx inject mdformat mdformat-front-matters
 
 ### Configuration Options
 
+#### Key Sorting
+
+By default, front matter keys are sorted alphabetically for consistency. To preserve the original key order, use the `--no-sort-front-matter` flag.
+
+```sh
+# Default behavior - keys are sorted alphabetically
+mdformat document.md
+
+# Preserve original key order
+mdformat document.md --no-sort-front-matter
+```
+
 #### Strict Mode
 
 Enable strict mode to fail on invalid front matter instead of preserving it. Useful for CI/CD pipelines.
 
 ```sh
-mdformat --strict-front-matter document.md
+mdformat document.md --strict-front-matter
 ```
 
 In strict mode:

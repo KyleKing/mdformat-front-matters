@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import time
-from typing_extensions import Self
 
 import mdformat
 import pytest
+from typing_extensions import Self
 
 
 class Timer:

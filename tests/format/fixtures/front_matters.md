@@ -143,9 +143,9 @@ author = "John Smith"
 Hugo uses TOML front matter with nested tables.
 .
 +++
-title = "Example"
 date = 2024-02-02T04:14:54-08:00
 draft = false
+title = "Example"
 weight = 10
 [params]
 author = "John Smith"
@@ -198,13 +198,13 @@ TODO: Format Hugo JSON front matter example
 Hugo uses JSON front matter with nested objects.
 .
 {
-    "title": "Example",
     "date": "2024-02-02T04:14:54-08:00",
     "draft": false,
-    "weight": 10,
     "params": {
         "author": "John Smith"
-    }
+    },
+    "title": "Example",
+    "weight": 10
 }
 
 # Example Headline
@@ -361,9 +361,6 @@ level = "debug"
 # Content
 .
 +++
-[server]
-host = "example.com"
-port = 8080
 [database]
 driver = "postgres"
 [logging]
@@ -374,18 +371,21 @@ path = "/var/log/app.log"
 [[logging.handlers]]
 type = "console"
 level = "debug"
-[server.ssl]
-enabled = true
-cert = "/path/to/cert"
+[server]
+host = "example.com"
+port = 8080
 [database.primary]
 host = "db1.example.com"
 port = 5432
-[server.ssl.options]
-min_version = "TLSv1.2"
-ciphers = [ "ECDHE-RSA-AES256-GCM-SHA384"]
+[server.ssl]
+enabled = true
+cert = "/path/to/cert"
 [database.primary.pool]
 min_connections = 5
 max_connections = 20
+[server.ssl.options]
+min_version = "TLSv1.2"
+ciphers = [ "ECDHE-RSA-AES256-GCM-SHA384"]
 +++
 
 # Content
@@ -711,33 +711,8 @@ tags = [ "production", "critical", "monitored"]
 # Content
 .
 +++
-version = "1.0.0"
 description = "Large configuration file for testing"
-[[services]]
-name = "service_001"
-enabled = true
-port = 8001
-
-[[services]]
-name = "service_002"
-enabled = true
-port = 8002
-
-[[services]]
-name = "service_003"
-enabled = false
-port = 8003
-
-[[services]]
-name = "service_004"
-enabled = true
-port = 8004
-
-[[services]]
-name = "service_005"
-enabled = true
-port = 8005
-
+version = "1.0.0"
 [[servers]]
 hostname = "server001.example.com"
 ip = "192.168.1.1"
@@ -762,6 +737,31 @@ datacenter = "us-west-1"
 hostname = "server005.example.com"
 ip = "192.168.1.5"
 datacenter = "eu-central-1"
+
+[[services]]
+name = "service_001"
+enabled = true
+port = 8001
+
+[[services]]
+name = "service_002"
+enabled = true
+port = 8002
+
+[[services]]
+name = "service_003"
+enabled = false
+port = 8003
+
+[[services]]
+name = "service_004"
+enabled = true
+port = 8004
+
+[[services]]
+name = "service_005"
+enabled = true
+port = 8005
 [metadata]
 created = 2024-01-01T00:00:00Z
 updated = 2024-12-31T23:59:59Z
@@ -809,4 +809,70 @@ script: 'This is a folded string that will be concatenated into a single line
 ---
 
 # Content
+.
+
+
+YAML front matter key sorting
+.
+---
+z_key: last
+a_key: first
+m_key: middle
+nested:
+  z_sub: last
+  a_sub: first
+---
+
+Content here.
+.
+---
+a_key: first
+m_key: middle
+nested:
+  a_sub: first
+  z_sub: last
+z_key: last
+---
+
+Content here.
+.
+
+
+TOML front matter gets sorted
+.
++++
+z_key = "last"
+a_key = "first"
+m_key = "middle"
++++
+
+Content here.
+.
++++
+a_key = "first"
+m_key = "middle"
+z_key = "last"
++++
+
+Content here.
+.
+
+
+JSON front matter gets sorted
+.
+{
+"z_key": "last",
+"a_key": "first",
+"m_key": "middle"
+}
+
+Content here.
+.
+{
+    "a_key": "first",
+    "m_key": "middle",
+    "z_key": "last"
+}
+
+Content here.
 .

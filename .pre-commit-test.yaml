@@ -7,6 +7,13 @@ repos:
       - id: mdformat
         name: mdformat-from-tox
         entry: mdformat
-        files: tests/pre-commit-test.md
+        files: tests/pre-commit-test-(yaml|toml|json)\.md$
+        types: [markdown]
+        language: system
+      - id: mdformat-no-sort
+        name: mdformat-from-tox-no-sort
+        entry: mdformat
+        args: [--no-sort-front-matter]
+        files: tests/pre-commit-test-yaml-nosort\.md$
         types: [markdown]
         language: system
