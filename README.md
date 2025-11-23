@@ -88,7 +88,7 @@ repos:
 ### uvx
 
 ```sh
-uvx --from mdformat-front-matters mdformat
+uvx --with mdformat-front-matters mdformat
 ```
 
 Or with pipx:
@@ -160,7 +160,7 @@ md.render(text)
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/kyleking/mdformat-front-matters/blob/main/CONTRIBUTING.md) and [Repository Guidelines](./AGENTS.md).
+See [CONTRIBUTING.md](https://github.com/kyleking/mdformat-front-matters/blob/main/CONTRIBUTING.md)
 
 [ci-badge]: https://github.com/kyleking/mdformat-front-matters/actions/workflows/tests.yml/badge.svg?branch=main
 [ci-link]: https://github.com/kyleking/mdformat-front-matters/actions?query=workflow%3ACI+branch%3Amain+event%3Apush
