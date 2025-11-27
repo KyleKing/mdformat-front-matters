@@ -143,7 +143,7 @@ repos:
 
 ## HTML Rendering
 
-To generate HTML output, `front_matters_plugin` can be imported from `mdit_plugins`. For more guidance on `MarkdownIt`, see the docs: <https://markdown-it-py.readthedocs.io/en/latest/using.html#the-parser>
+To hide Front Matter from generated HTML output, `front_matters_plugin` can be imported from `mdit_plugins`. For more guidance on `MarkdownIt`, see the docs: <https://markdown-it-py.readthedocs.io/en/latest/using.html#the-parser>
 
 ```py
 from markdown_it import MarkdownIt
@@ -153,12 +153,18 @@ from mdformat_front_matters.mdit_plugins import front_matters_plugin
 md = MarkdownIt()
 md.use(front_matters_plugin)
 
-text = "... markdown example ..."
+text = """
++++
+title = "Example"
+draft = false
++++
+# Example
+"""
 md.render(text)
-# <div>
-#
-# </div>
+# <h1>Example</h1>
 ```
+
+-->
 
 ## Contributing
 
