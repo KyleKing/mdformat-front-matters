@@ -25,7 +25,7 @@ license-files = ["LICENSE"]
 name = "mdformat_front_matters"
 readme = "README.md"
 requires-python = ">=3.10.0"
-version = "0.1.0"
+version = "1.0.0"
 
 [project.entry-points."mdformat.parser_extension"]
 front_matters = "mdformat_front_matters"
@@ -45,7 +45,7 @@ homepage = "https://github.com/kyleking/mdformat-front-matters"
 
 [tool.commitizen]
 tag_format = "v${version}"
-version = "0.1.0"
+version = "1.0.0"
 version_files = ["mdformat_front_matters/__init__.py", "pyproject.toml:^version"]
 
 [tool.mypy]
