@@ -20,7 +20,12 @@ def flatten(nested_list: list[list[T]]) -> list[T]:
 fixtures = flatten(
     [
         read_fixture_file(Path(__file__).parent / "fixtures" / fixture_path)
-        for fixture_path in ("front_matters.md",)
+        for fixture_path in (
+            "front_matters.md",
+            # To determine interoperability with python-frontmatter, copied from:
+            #  https://github.com/butler54/mdformat-frontmatter/blob/93bb972b6044d22043d6c191a2e73858ff09d3e5/tests/fixtures.md
+            "python_frontmatter.md",
+        )
     ],
 )
 
