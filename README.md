@@ -5,7 +5,9 @@
 An [mdformat](https://github.com/executablebooks/mdformat) plugin for normalizing YAML, TOML, and JSON front matter in CommonMark documents.
 
 > [!NOTE]
-> [`mdformat-frontmatter`](https://github.com/butler54/mdformat-frontmatter) has additional duplicate key detection, but did not support mdformat v1 ([butler54/mdformat-frontmatter #37](<(https://github.com/butler54/mdformat-frontmatter/issues/37)>) nor TOML and JSON at the time ([https://github.com/butler54/mdformat-frontmatter/issues/22#issuecomment-1815433725](https://github.com/butler54/mdformat-frontmatter/issues/22#issuecomment-1815433725)). Along with the 's', the extra dash is intentional to try to prevent typo errors.
+> [`mdformat-frontmatter`](https://github.com/butler54/mdformat-frontmatter) has additional duplicate key detection, but did not support mdformat v1 ([butler54/mdformat-frontmatter #37](https://github.com/butler54/mdformat-frontmatter/issues/37)) nor TOML and JSON at the time ([https://github.com/butler54/mdformat-frontmatter/issues/22#issuecomment-1815433725](https://github.com/butler54/mdformat-frontmatter/issues/22#issuecomment-1815433725))
+>
+> Along with the 's', the extra dash is intentional to try to prevent typo errors.
 
 ## Features
 
