@@ -37,8 +37,8 @@ Foo
     result = mdformat.text(text, extensions={"front_matters"})
     assert "Foo" in result
 
-    # Strict mode should raise ValueError (empty metadata)
-    with pytest.raises(ValueError, match=r".*"):
+    # Strict mode should raise TypeError (non-dict metadata)
+    with pytest.raises(TypeError, match=r".*"):
         mdformat.text(
             text,
             extensions={"front_matters"},

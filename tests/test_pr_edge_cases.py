@@ -45,8 +45,7 @@ numbers = [ 1 , 2 , 3 ]
     # Trailing comma should be removed
     assert '"tag2",]' not in result
 
-    # Note: Array spacing normalization is now disabled to prevent
-    # string corruption, so we accept whatever python-frontmatter outputs
+    # Note: Array spacing normalization is disabled to prevent string corruption
     assert "# Content" in result
 
 

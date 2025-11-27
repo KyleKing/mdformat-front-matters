@@ -13,9 +13,9 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
+  "PyYAML >= 6.0",
   "mdformat >= 0.7.19",
   "mdit-py-plugins >= 0.4.1",
-  "python-frontmatter >= 1.0.0",
   "toml >= 0.10.0",
 ]
 description = "An mdformat plugin to format YAML, TOML, or JSON front matter"

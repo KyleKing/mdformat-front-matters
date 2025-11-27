@@ -1,13 +1,14 @@
-"""Front matter formatters using python-frontmatter."""
+"""Front matter formatters for YAML, TOML, and JSON."""
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any
 
-import frontmatter  # type: ignore[import-untyped]
+import toml  # type: ignore[import-untyped]
 import yaml
 from mdformat.renderer import LOGGER
 
@@ -37,12 +38,11 @@ SPECIAL_YAML_CHARS = {
 """These characters require quoting: : { } [ ] , & * # ? | - < > = ! % @ `."""
 
 
-class _UnicodePreservingYAMLHandler(frontmatter.YAMLHandler):
+class _UnicodePreservingYAMLHandler:
     """Custom YAML handler that preserves unicode characters without escaping.
 
-    This handler extends the default YAMLHandler to use a custom dumper
-    that outputs unicode characters (including emojis) in their original form
-    rather than escaping them.
+    This handler uses a custom dumper that outputs unicode characters
+    (including emojis) in their original form rather than escaping them.
     """
 
     def export(self, metadata: dict[str, object], **kwargs: object) -> str:  # noqa: PLR6301
@@ -69,7 +69,11 @@ class _UnicodePreservingYAMLHandler(frontmatter.YAMLHandler):
         class UnicodePreservingDumper(yaml.SafeDumper):
             """Custom YAML dumper that preserves unicode in plain style."""
 
-            def increase_indent(self, flow: bool = False, indentless: bool = False) -> None:  # noqa: FBT002
+            def increase_indent(
+                self,
+                flow: bool = False,  # noqa: FBT002
+                indentless: bool = False,  # noqa: ARG002, FBT002
+            ) -> None:
                 """Override to prevent indentless sequences.
 
                 This ensures YAML sequences (lists) are properly indented with
@@ -80,7 +84,7 @@ class _UnicodePreservingYAMLHandler(frontmatter.YAMLHandler):
                     tags:
                     - item
                 """
-                return super().increase_indent(flow, False)
+                return super().increase_indent(flow, False)  # noqa: FBT003
 
         def str_representer(dumper: Any, data: str) -> Any:  # noqa: ANN401
             """Represent strings with unicode preservation.
@@ -115,46 +119,46 @@ class _UnicodePreservingYAMLHandler(frontmatter.YAMLHandler):
         return yaml.dump(metadata, **kwargs).strip()  # type: ignore[call-overload]
 
 
-class _SortingTOMLHandler(frontmatter.TOMLHandler):
+class _SortingTOMLHandler:
     """Custom TOML handler that supports key sorting."""
 
-    def export(self, metadata: dict[str, object], **kwargs: object) -> str:
+    def export(self, metadata: dict[str, object], **kwargs: object) -> str:  # noqa: PLR6301
         """Export metadata as TOML with optional key sorting.
 
         Args:
             metadata: Dictionary to export as TOML.
-            **kwargs: Additional arguments.
+            **kwargs: Additional arguments (ignored).
 
         Returns:
             TOML string.
         """
-        if kwargs.pop("sort_keys", True):
+        sort_keys_val = kwargs.pop("sort_keys", True)
+        sort_keys = bool(sort_keys_val) if sort_keys_val is not None else True
+        if sort_keys:
             metadata = dict(sorted(metadata.items()))
-        # Call the parent export method
-        return super().export(metadata, **kwargs)
+        return toml.dumps(metadata)
 
 
-class _SortingJSONHandler(frontmatter.JSONHandler):
+class _SortingJSONHandler:
     """Custom JSON handler that supports key sorting."""
 
-    def export(self, metadata: dict[str, object], **kwargs: object) -> str:
+    def export(self, metadata: dict[str, object], **kwargs: object) -> str:  # noqa: PLR6301
         """Export metadata as JSON with optional key sorting.
 
         Args:
             metadata: Dictionary to export as JSON.
-            **kwargs: Additional arguments.
+            **kwargs: Additional arguments (ignored).
 
         Returns:
             JSON string.
         """
-        if kwargs.pop("sort_keys", True):
-            metadata = dict(sorted(metadata.items()))
-        # Call the parent export method
-        return super().export(metadata, **kwargs)
+        sort_keys_val = kwargs.pop("sort_keys", True)
+        sort_keys = bool(sort_keys_val) if sort_keys_val is not None else True
+        return json.dumps(metadata, indent=4, sort_keys=sort_keys)
 
 
 def _normalize_toml_output(content: str) -> str:
-    """Normalize TOML output from python-frontmatter.
+    """Normalize TOML output.
 
     Removes extra blank lines and trailing commas added by the TOML library.
 
@@ -175,7 +179,6 @@ def _normalize_toml_output(content: str) -> str:
     # NOTE: We do NOT normalize array spacing (e.g., [ "item" -> ["item"])
     # because regex-based approach would corrupt bracket spacing inside strings.
     # Example: description = "[ spaced ]" would incorrectly become "[spaced]"
-    # The python-frontmatter TOML library already handles spacing correctly.
 
     # Remove blank line before closing (if present)
     return re.sub(r"\n\n+$", "\n", content)
@@ -259,32 +262,33 @@ def _handle_format_errors(
 
 def _format_with_handler(
     content: str,
-    handler: Any,  # frontmatter handler type  # noqa: ANN401
-    parse_wrapper: str,
-    delimiter: str | None = None,
+    handler: Any,  # Handler instance  # noqa: ANN401
+    parse_func: Any,  # Parsing function (yaml.safe_load, etc.)  # noqa: ANN401
     *,
     sort_keys: bool = True,
 ) -> str:
-    """Format front matter using a frontmatter handler.
+    """Format front matter using a handler and parsing function.
 
     Args:
-        content: Raw front matter content.
-        handler: The frontmatter handler (e.g., YAMLHandler, TOMLHandler).
-        parse_wrapper: Template string for wrapping content during parsing.
-        delimiter: Delimiter to strip (None for JSON which has special handling).
+        content: Raw front matter content (without delimiters).
+        handler: Handler instance with export() method.
+        parse_func: Function to parse content (yaml.safe_load, toml.loads, etc.).
         sort_keys: Whether to sort keys in the front matter.
 
     Returns:
-        Formatted front matter.
+        Formatted front matter (without delimiters).
 
     Raises:
+        TypeError: When metadata is not a dictionary.
         ValueError: When metadata contains no valid key-value pairs.
     """
-    # Parse the content
-    metadata, _ = frontmatter.parse(
-        parse_wrapper.format(content=content),
-        handler=handler,
-    )
+    metadata = parse_func(content)
+
+    # Metadata must be a dictionary (key-value pairs)
+    # Scalar values, lists, etc. are not valid front matter
+    if not isinstance(metadata, dict):
+        msg = f"Front matter must be key-value pairs, got {type(metadata).__name__}"
+        raise TypeError(msg)
 
     # Allow empty front matter blocks (CommonMark v0.29 spec example 68)
     # Empty content between delimiters is valid and should be preserved
@@ -296,47 +300,27 @@ def _format_with_handler(
         msg = "Front matter contains no valid key-value pairs"
         raise ValueError(msg)
 
-    # Create a post and dump back to formatted string
-    post = frontmatter.Post("", **metadata)
-    if hasattr(handler, "export"):
-        # Custom handler like our YAML handler
-        formatted = handler.export(metadata, sort_keys=sort_keys)
-    else:
-        # Standard handlers (TOML, JSON) - they don't support sorting
-        formatted = frontmatter.dumps(post, handler=handler)
-
-    # Strip delimiters based on format type
-    if delimiter:
-        return _strip_delimiters(formatted, delimiter)
-    # JSON special handling: extract inner content
-    if formatted.startswith("{\n") and formatted.endswith("\n}\n"):
-        lines = formatted.split("\n")
-        if len(lines) > 2:  # noqa: PLR2004
-            inner = "\n".join(lines[1:-2])
-            if inner.strip():
-                return f"{{\n{inner}\n}}"
-    return formatted.rstrip("\n")
+    return handler.export(metadata, sort_keys=sort_keys).strip()
 
 
 def format_yaml(content: str, *, strict: bool = False, sort_keys: bool = True) -> str:
     """Format YAML front matter content.
 
     Args:
-        content: Raw YAML string to format.
+        content: Raw YAML string to format (without delimiters).
         strict: If True, raise exceptions instead of preserving original.
         sort_keys: If True, sort keys alphabetically.
 
     Returns:
-        Formatted YAML string, or original content if formatting fails
-        in non-strict mode.
+        Formatted YAML string (without delimiters), or original content if
+        formatting fails in non-strict mode.
     """
     try:
         with _handle_format_errors(content, "YAML", strict=strict):
             return _format_with_handler(
                 content,
                 _UnicodePreservingYAMLHandler(),
-                "---\n{content}\n---\n",
-                "---",
+                yaml.safe_load,
                 sort_keys=sort_keys,
             )
     except FormatError as e:
@@ -347,21 +331,20 @@ def format_toml(content: str, *, strict: bool = False, sort_keys: bool = True) -
     """Format TOML front matter content.
 
     Args:
-        content: Raw TOML string to format.
+        content: Raw TOML string to format (without delimiters).
         strict: If True, raise exceptions instead of preserving original.
-        sort_keys: If True, sort keys alphabetically (ignored for TOML).
+        sort_keys: If True, sort keys alphabetically.
 
     Returns:
-        Formatted TOML string, or original content if formatting fails
-        in non-strict mode.
+        Formatted TOML string (without delimiters), or original content if
+        formatting fails in non-strict mode.
     """
     try:
         with _handle_format_errors(content, "TOML", strict=strict):
             formatted = _format_with_handler(
                 content,
                 _SortingTOMLHandler(),
-                "+++\n{content}\n+++\n",
-                "+++",
+                toml.loads,
                 sort_keys=sort_keys,
             )
             return _normalize_toml_output(formatted)
@@ -373,21 +356,20 @@ def format_json(content: str, *, strict: bool = False, sort_keys: bool = True) -
     """Format JSON front matter content.
 
     Args:
-        content: Raw JSON string to format.
+        content: Raw JSON string to format (without delimiters).
         strict: If True, raise exceptions instead of preserving original.
-        sort_keys: If True, sort keys alphabetically (ignored for JSON).
+        sort_keys: If True, sort keys alphabetically.
 
     Returns:
-        Formatted JSON string, or original content if formatting fails
-        in non-strict mode.
+        Formatted JSON string (without delimiters), or original content if
+        formatting fails in non-strict mode.
     """
     try:
         with _handle_format_errors(content, "JSON", strict=strict):
             return _format_with_handler(
                 content,
                 _SortingJSONHandler(),
-                "{content}\n",
-                None,  # JSON has no delimiters
+                json.loads,
                 sort_keys=sort_keys,
             )
     except FormatError as e:
