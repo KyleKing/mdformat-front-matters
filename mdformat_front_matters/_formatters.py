@@ -69,6 +69,19 @@ class _UnicodePreservingYAMLHandler(frontmatter.YAMLHandler):
         class UnicodePreservingDumper(yaml.SafeDumper):
             """Custom YAML dumper that preserves unicode in plain style."""
 
+            def increase_indent(self, flow: bool = False, indentless: bool = False) -> None:  # noqa: FBT001, FBT002
+                """Override to prevent indentless sequences.
+
+                This ensures YAML sequences (lists) are properly indented with
+                spaces before the dash, e.g.:
+                    tags:
+                      - item
+                instead of:
+                    tags:
+                    - item
+                """
+                return super().increase_indent(flow, False)
+
         def str_representer(dumper: Any, data: str) -> Any:  # noqa: ANN401
             """Represent strings with unicode preservation.
 

@@ -256,9 +256,9 @@ database:
     pool_size: 10
     timeout: 30
 tags:
-- nested
-- arrays
-- testing
+  - nested
+  - arrays
+  - testing
 metadata:
   created_by:
     name: John Doe
@@ -295,30 +295,30 @@ matrix:
 .
 ---
 features:
-- name: authentication
-  enabled: true
-  config:
-    providers:
-    - oauth
-    - saml
-    timeout: 3600
-- name: logging
-  enabled: false
-  config:
-    level: debug
-    handlers:
-    - console
-    - file
+  - name: authentication
+    enabled: true
+    config:
+      providers:
+        - oauth
+        - saml
+      timeout: 3600
+  - name: logging
+    enabled: false
+    config:
+      level: debug
+      handlers:
+        - console
+        - file
 matrix:
-- - 1
-  - 2
-  - 3
-- - 4
-  - 5
-  - 6
-- - 7
-  - 8
-  - 9
+  - - 1
+    - 2
+    - 3
+  - - 4
+    - 5
+    - 6
+  - - 7
+    - 8
+    - 9
 ---
 
 # Content
@@ -617,26 +617,26 @@ large_config:
   setting_029: value_029
   setting_030: value_030
 large_array:
-- item_001
-- item_002
-- item_003
-- item_004
-- item_005
-- item_006
-- item_007
-- item_008
-- item_009
-- item_010
-- item_011
-- item_012
-- item_013
-- item_014
-- item_015
-- item_016
-- item_017
-- item_018
-- item_019
-- item_020
+  - item_001
+  - item_002
+  - item_003
+  - item_004
+  - item_005
+  - item_006
+  - item_007
+  - item_008
+  - item_009
+  - item_010
+  - item_011
+  - item_012
+  - item_013
+  - item_014
+  - item_015
+  - item_016
+  - item_017
+  - item_018
+  - item_019
+  - item_020
 large_text: This is a very long text value that spans multiple words and could potentially
   cause line wrapping issues if the formatter doesnt handle it correctly. It contains
   many characters and should be preserved exactly as written without modification
@@ -875,4 +875,28 @@ Content here.
 }
 
 Content here.
+.
+
+
+Issue #10 - YAML list indentation preservation
+.
+---
+tags:
+ - Cognito
+ - Authentication
+---
+
+# Cognito authentication
+
+## What is it
+.
+---
+tags:
+  - Cognito
+  - Authentication
+---
+
+# Cognito authentication
+
+## What is it
 .
