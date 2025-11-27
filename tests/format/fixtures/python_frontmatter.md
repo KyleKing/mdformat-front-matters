@@ -82,7 +82,6 @@ CommonMark v0.29 spec example 68
 ---
 .
 ---
-null
 ---
 .
 

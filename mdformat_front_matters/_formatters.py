@@ -286,9 +286,13 @@ def _format_with_handler(
         handler=handler,
     )
 
-    # Raise error if no valid metadata to prevent data loss
-    # Empty metadata means the content was not valid structured data
+    # Allow empty front matter blocks (CommonMark v0.29 spec example 68)
+    # Empty content between delimiters is valid and should be preserved
     if not metadata:
+        # Only return empty if the original content was truly empty
+        if not content.strip():
+            return ""
+        # For non-empty but unparseable content, raise error to preserve original
         msg = "Front matter contains no valid key-value pairs"
         raise ValueError(msg)
 
