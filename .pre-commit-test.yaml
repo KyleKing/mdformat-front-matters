@@ -4,16 +4,16 @@
 repos:
   - repo: local
     hooks:
-      - id: mdformat
-        name: mdformat-from-tox
+      - id: mdformat-sort
+        name: mdformat-from-tox-sort
         entry: mdformat
+        args: [--sort-front-matter]
         files: tests/pre-commit-test-(yaml|toml|json)\.md$
         types: [markdown]
         language: system
       - id: mdformat-no-sort
         name: mdformat-from-tox-no-sort
         entry: mdformat
-        args: [--no-sort-front-matter]
         files: tests/pre-commit-test-yaml-nosort\.md$
         types: [markdown]
         language: system

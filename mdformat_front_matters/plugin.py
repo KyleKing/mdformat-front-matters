@@ -29,11 +29,11 @@ def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
         ),
     )
     group.add_argument(
-        "--no-sort-front-matter",
+        "--sort-front-matter",
         action="store_true",
         help=(
-            "Do not sort front matter keys. Preserve the original key order. "
-            "By default, keys are sorted alphabetically for consistency."
+            "Sort front matter keys alphabetically for consistency. "
+            "By default, the original key order is preserved."
         ),
     )
 
@@ -63,10 +63,10 @@ def _render_front_matter(node: RenderTreeNode, context: RenderContext) -> str:
     # Note: argparse converts hyphens to underscores, so --strict-front-matter
     # is stored as "strict_front_matter" in the options dict
     strict = bool(get_conf(context.options, "strict_front_matter"))
-    # Check if sorting is disabled
-    # Note: argparse converts hyphens to underscores, so --no-sort-front-matter
-    # is stored as "no_sort_front_matter" in the options dict
-    sort_keys = not bool(get_conf(context.options, "no_sort_front_matter"))
+    # Check if sorting is enabled
+    # Note: argparse converts hyphens to underscores, so --sort-front-matter
+    # is stored as "sort_front_matter" in the options dict
+    sort_keys = bool(get_conf(context.options, "sort_front_matter"))
 
     # Format the content based on type
     if format_type == "yaml":

@@ -18,8 +18,8 @@ def test_mdformat_text(format_type):
     )
 
 
-def test_yaml_front_matter_no_sort():
-    """Test that YAML front matter preserves key order when sorting is disabled."""
+def test_yaml_front_matter_with_sort():
+    """Test that YAML front matter sorts keys when --sort-front-matter is enabled."""
     input_md = """---
 z_key: last
 a_key: first
@@ -33,12 +33,12 @@ Content here.
 """
 
     expected = """---
-z_key: last
 a_key: first
 m_key: middle
 nested:
-  z_sub: last
   a_sub: first
+  z_sub: last
+z_key: last
 ---
 
 Content here.
@@ -47,13 +47,13 @@ Content here.
     result = mdformat.text(
         input_md,
         extensions={"front_matters"},
-        options={"plugin": {"front_matters": {"no_sort_front_matter": True}}},
+        options={"plugin": {"front_matters": {"sort_front_matter": True}}},
     )
     assert result == expected
 
 
-def test_toml_front_matter_no_sort():
-    """Test that TOML front matter preserves key order when sorting is disabled."""
+def test_toml_front_matter_with_sort():
+    """Test that TOML front matter sorts keys when --sort-front-matter is enabled."""
     input_md = """+++
 z_key = "last"
 a_key = "first"
@@ -64,9 +64,9 @@ Content here.
 """
 
     expected = """+++
-z_key = "last"
 a_key = "first"
 m_key = "middle"
+z_key = "last"
 +++
 
 Content here.
@@ -75,13 +75,13 @@ Content here.
     result = mdformat.text(
         input_md,
         extensions={"front_matters"},
-        options={"plugin": {"front_matters": {"no_sort_front_matter": True}}},
+        options={"plugin": {"front_matters": {"sort_front_matter": True}}},
     )
     assert result == expected
 
 
-def test_json_front_matter_no_sort():
-    """Test that JSON front matter preserves key order when sorting is disabled."""
+def test_json_front_matter_with_sort():
+    """Test that JSON front matter sorts keys when --sort-front-matter is enabled."""
     input_md = """{
 "z_key": "last",
 "a_key": "first",
@@ -92,9 +92,9 @@ Content here.
 """
 
     expected = """{
-    "z_key": "last",
     "a_key": "first",
-    "m_key": "middle"
+    "m_key": "middle",
+    "z_key": "last"
 }
 
 Content here.
@@ -103,6 +103,6 @@ Content here.
     result = mdformat.text(
         input_md,
         extensions={"front_matters"},
-        options={"plugin": {"front_matters": {"no_sort_front_matter": True}}},
+        options={"plugin": {"front_matters": {"sort_front_matter": True}}},
     )
     assert result == expected

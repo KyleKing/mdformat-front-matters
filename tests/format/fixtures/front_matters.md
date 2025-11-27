@@ -143,9 +143,9 @@ author = "John Smith"
 Hugo uses TOML front matter with nested tables.
 .
 +++
+title = "Example"
 date = 2024-02-02T04:14:54-08:00
 draft = false
-title = "Example"
 weight = 10
 [params]
 author = "John Smith"
@@ -171,12 +171,12 @@ params:
 Hugo uses YAML front matter with nested maps.
 .
 ---
+title: Example
 date: 2024-02-02 04:14:54-08:00
 draft: false
+weight: 10
 params:
   author: John Smith
-title: Example
-weight: 10
 ---
 
 # Example Headline
@@ -198,13 +198,13 @@ TODO: Format Hugo JSON front matter example
 Hugo uses JSON front matter with nested objects.
 .
 {
+    "title": "Example",
     "date": "2024-02-02T04:14:54-08:00",
     "draft": false,
+    "weight": 10,
     "params": {
         "author": "John Smith"
-    },
-    "title": "Example",
-    "weight": 10
+    }
 }
 
 # Example Headline
@@ -244,25 +244,25 @@ metadata:
 database:
   connections:
     primary:
-      credentials:
-        password: secret
-        username: admin
       host: localhost
       port: 5432
+      credentials:
+        username: admin
+        password: secret
     secondary:
       host: backup.example.com
       port: 5432
   settings:
     pool_size: 10
     timeout: 30
-metadata:
-  created_by:
-    email: john@example.com
-    name: John Doe
 tags:
 - nested
 - arrays
 - testing
+metadata:
+  created_by:
+    name: John Doe
+    email: john@example.com
 ---
 
 # Content
@@ -295,20 +295,20 @@ matrix:
 .
 ---
 features:
-- config:
+- name: authentication
+  enabled: true
+  config:
     providers:
     - oauth
     - saml
     timeout: 3600
-  enabled: true
-  name: authentication
-- config:
+- name: logging
+  enabled: false
+  config:
+    level: debug
     handlers:
     - console
     - file
-    level: debug
-  enabled: false
-  name: logging
 matrix:
 - - 1
   - 2
@@ -361,6 +361,9 @@ level = "debug"
 # Content
 .
 +++
+[server]
+host = "example.com"
+port = 8080
 [database]
 driver = "postgres"
 [logging]
@@ -371,21 +374,18 @@ path = "/var/log/app.log"
 [[logging.handlers]]
 type = "console"
 level = "debug"
-[server]
-host = "example.com"
-port = 8080
-[database.primary]
-host = "db1.example.com"
-port = 5432
 [server.ssl]
 enabled = true
 cert = "/path/to/cert"
-[database.primary.pool]
-min_connections = 5
-max_connections = 20
+[database.primary]
+host = "db1.example.com"
+port = 5432
 [server.ssl.options]
 min_version = "TLSv1.2"
 ciphers = [ "ECDHE-RSA-AES256-GCM-SHA384"]
+[database.primary.pool]
+min_connections = 5
+max_connections = 20
 +++
 
 # Content
@@ -516,10 +516,10 @@ regex: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
 # Content
 .
 ---
+title: Test with émojis 🎉 and spëcial chars
 description: 'Quotes: "nested" ''single'''
 path: C:\Windows\Path\With\Backslashes
 regex: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
-title: Test with émojis 🎉 and spëcial chars
 ---
 
 # Content
@@ -585,27 +585,6 @@ large_text: This is a very long text value that spans multiple words and could p
 # Content
 .
 ---
-large_array:
-- item_001
-- item_002
-- item_003
-- item_004
-- item_005
-- item_006
-- item_007
-- item_008
-- item_009
-- item_010
-- item_011
-- item_012
-- item_013
-- item_014
-- item_015
-- item_016
-- item_017
-- item_018
-- item_019
-- item_020
 large_config:
   setting_001: value_001
   setting_002: value_002
@@ -637,6 +616,27 @@ large_config:
   setting_028: value_028
   setting_029: value_029
   setting_030: value_030
+large_array:
+- item_001
+- item_002
+- item_003
+- item_004
+- item_005
+- item_006
+- item_007
+- item_008
+- item_009
+- item_010
+- item_011
+- item_012
+- item_013
+- item_014
+- item_015
+- item_016
+- item_017
+- item_018
+- item_019
+- item_020
 large_text: This is a very long text value that spans multiple words and could potentially
   cause line wrapping issues if the formatter doesnt handle it correctly. It contains
   many characters and should be preserved exactly as written without modification
@@ -711,33 +711,8 @@ tags = [ "production", "critical", "monitored"]
 # Content
 .
 +++
-description = "Large configuration file for testing"
 version = "1.0.0"
-[[servers]]
-hostname = "server001.example.com"
-ip = "192.168.1.1"
-datacenter = "us-east-1"
-
-[[servers]]
-hostname = "server002.example.com"
-ip = "192.168.1.2"
-datacenter = "us-east-1"
-
-[[servers]]
-hostname = "server003.example.com"
-ip = "192.168.1.3"
-datacenter = "us-west-1"
-
-[[servers]]
-hostname = "server004.example.com"
-ip = "192.168.1.4"
-datacenter = "us-west-1"
-
-[[servers]]
-hostname = "server005.example.com"
-ip = "192.168.1.5"
-datacenter = "eu-central-1"
-
+description = "Large configuration file for testing"
 [[services]]
 name = "service_001"
 enabled = true
@@ -762,6 +737,31 @@ port = 8004
 name = "service_005"
 enabled = true
 port = 8005
+
+[[servers]]
+hostname = "server001.example.com"
+ip = "192.168.1.1"
+datacenter = "us-east-1"
+
+[[servers]]
+hostname = "server002.example.com"
+ip = "192.168.1.2"
+datacenter = "us-east-1"
+
+[[servers]]
+hostname = "server003.example.com"
+ip = "192.168.1.3"
+datacenter = "us-west-1"
+
+[[servers]]
+hostname = "server004.example.com"
+ip = "192.168.1.4"
+datacenter = "us-west-1"
+
+[[servers]]
+hostname = "server005.example.com"
+ip = "192.168.1.5"
+datacenter = "eu-central-1"
 [metadata]
 created = 2024-01-01T00:00:00Z
 updated = 2024-12-31T23:59:59Z
@@ -798,14 +798,14 @@ description: 'This is a multiline string
   and preserves formatting
 
   '
+script: 'This is a folded string that will be concatenated into a single line
+
+  '
 literal: 'Line one
 
   Line two
 
   Line three'
-script: 'This is a folded string that will be concatenated into a single line
-
-  '
 ---
 
 # Content
@@ -826,12 +826,12 @@ nested:
 Content here.
 .
 ---
+z_key: last
 a_key: first
 m_key: middle
 nested:
-  a_sub: first
   z_sub: last
-z_key: last
+  a_sub: first
 ---
 
 Content here.
@@ -849,9 +849,9 @@ m_key = "middle"
 Content here.
 .
 +++
+z_key = "last"
 a_key = "first"
 m_key = "middle"
-z_key = "last"
 +++
 
 Content here.
@@ -869,9 +869,9 @@ JSON front matter gets sorted
 Content here.
 .
 {
+    "z_key": "last",
     "a_key": "first",
-    "m_key": "middle",
-    "z_key": "last"
+    "m_key": "middle"
 }
 
 Content here.

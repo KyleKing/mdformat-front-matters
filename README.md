@@ -10,8 +10,8 @@ An [mdformat](https://github.com/executablebooks/mdformat) plugin for normalizin
 ## Features
 
 - **Multi-format support**: Handles YAML (`---`), TOML (`+++`), and JSON (`{...}`) front matter
-- **Automatic normalization**: Formats front matter consistently (sorted keys by default, standardized indentation)
-- **Configurable sorting**: Option to preserve original key order with `--no-sort-front-matter`
+- **Automatic normalization**: Formats front matter consistently (preserves key order by default, standardized indentation)
+- **Configurable sorting**: Option to sort keys alphabetically with `--sort-front-matter`
 - **Error resilient**: Preserves original content if parsing fails. Will error only if `strict` mode is set
 - **Zero configuration**: Works out of the box with mdformat
 
@@ -31,7 +31,7 @@ tags:
 # Content
 ```
 
-Becomes:
+With `--sort-front-matter`, becomes:
 
 ```markdown
 ---
@@ -102,14 +102,14 @@ pipx inject mdformat mdformat-front-matters
 
 #### Key Sorting
 
-By default, front matter keys are sorted alphabetically for consistency. To preserve the original key order, use the `--no-sort-front-matter` flag.
+By default, front matter keys preserve their original order. To sort keys alphabetically for consistency, use the `--sort-front-matter` flag.
 
 ```sh
-# Default behavior - keys are sorted alphabetically
+# Default behavior - preserves original key order
 mdformat document.md
 
-# Preserve original key order
-mdformat document.md --no-sort-front-matter
+# Sort keys alphabetically
+mdformat document.md --sort-front-matter
 ```
 
 #### Strict Mode
