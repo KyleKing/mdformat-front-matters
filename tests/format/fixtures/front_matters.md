@@ -172,7 +172,7 @@ Hugo uses YAML front matter with nested maps.
 .
 ---
 title: Example
-date: 2024-02-02 04:14:54-08:00
+date: 2024-02-02T04:14:54-08:00
 draft: false
 weight: 10
 params:
@@ -310,15 +310,9 @@ features:
         - console
         - file
 matrix:
-  - - 1
-    - 2
-    - 3
-  - - 4
-    - 5
-    - 6
-  - - 7
-    - 8
-    - 9
+  - [1, 2, 3]
+  - [4, 5, 6]
+  - [7, 8, 9]
 ---
 
 # Content
@@ -517,7 +511,7 @@ regex: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
 .
 ---
 title: Test with émojis 🎉 and spëcial chars
-description: 'Quotes: "nested" ''single'''
+description: "Quotes: \"nested\" 'single'"
 path: C:\Windows\Path\With\Backslashes
 regex: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
 ---
@@ -637,10 +631,7 @@ large_array:
   - item_018
   - item_019
   - item_020
-large_text: This is a very long text value that spans multiple words and could potentially
-  cause line wrapping issues if the formatter doesnt handle it correctly. It contains
-  many characters and should be preserved exactly as written without modification
-  to its content or structure.
+large_text: This is a very long text value that spans multiple words and could potentially cause line wrapping issues if the formatter doesnt handle it correctly. It contains many characters and should be preserved exactly as written without modification to its content or structure.
 ---
 
 # Content
@@ -791,21 +782,18 @@ literal: |-
 # Content
 .
 ---
-description: 'This is a multiline string
-
+description: |
+  This is a multiline string
   that spans multiple lines
-
   and preserves formatting
-
-  '
-script: 'This is a folded string that will be concatenated into a single line
-
-  '
-literal: 'Line one
-
+script: >
+  This is a folded string
+  that will be concatenated
+  into a single line
+literal: |-
+  Line one
   Line two
-
-  Line three'
+  Line three
 ---
 
 # Content

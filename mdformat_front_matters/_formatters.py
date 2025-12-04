@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from collections.abc import Generator
 from contextlib import contextmanager
+from io import StringIO
 from typing import Any
 
 import toml  # type: ignore[import-untyped]
-import yaml
 from mdformat.renderer import LOGGER
+from ruamel.yaml import YAML
 
 SPECIAL_YAML_CHARS = {
     ":",
@@ -39,84 +41,61 @@ SPECIAL_YAML_CHARS = {
 
 
 class _UnicodePreservingYAMLHandler:
-    """Custom YAML handler that preserves unicode characters without escaping.
+    """Custom YAML handler that preserves unicode characters and comments.
 
-    This handler uses a custom dumper that outputs unicode characters
-    (including emojis) in their original form rather than escaping them.
+    This handler uses ruamel.yaml for round-trip preservation of comments
+    and outputs unicode characters (including emojis) in their original form.
     """
 
-    def export(self, metadata: dict[str, object], **kwargs: object) -> str:  # noqa: PLR6301
-        """Export metadata as YAML with unicode preservation.
+    def export(self, metadata: dict[str, object], **kwargs: object) -> str:
+        """Export metadata as YAML with unicode and comment preservation.
 
         Args:
             metadata: Dictionary to export as YAML.
-            **kwargs: Additional arguments passed to yaml.dump.
+            **kwargs: Additional arguments.
 
         Returns:
-            YAML string with preserved unicode characters.
+            YAML string with preserved unicode characters and comments.
         """
         sort_keys = kwargs.pop("sort_keys", True)
-        """Export metadata as YAML with unicode preservation.
+
+        yaml = YAML()
+        yaml.preserve_quotes = False
+        yaml.default_flow_style = False
+        yaml.allow_unicode = True
+        yaml.width = sys.maxsize  # Prevent line wrapping
+
+        # Consistent indentation for previous mdformat-frontmatter users:
+        # https://github.com/butler54/mdformat-frontmatter/blob/93bb972b6044d22043d6c191a2e73858ff09d3e5/mdformat_frontmatter/plugin.py#L14
+        yaml.indent(mapping=2, sequence=4, offset=2)
+
+        if sort_keys:
+            metadata = self._sort_dict_recursively(metadata)
+
+        stream = StringIO()
+        yaml.dump(metadata, stream)
+        return stream.getvalue().strip()
+
+    def _sort_dict_recursively(
+        self,
+        data: dict[str, object],
+    ) -> dict[str, object]:
+        """Recursively sort dictionary keys.
 
         Args:
-            metadata: Dictionary to export as YAML.
-            **kwargs: Additional arguments passed to yaml.dump.
+            data: Dictionary to sort.
 
         Returns:
-            YAML string with preserved unicode characters.
+            Dictionary with sorted keys at all levels.
         """
-
-        class UnicodePreservingDumper(yaml.SafeDumper):
-            """Custom YAML dumper that preserves unicode in plain style."""
-
-            def increase_indent(
-                self,
-                flow: bool = False,  # noqa: FBT002
-                indentless: bool = False,  # noqa: ARG002, FBT002
-            ) -> None:
-                """Override to prevent indentless sequences.
-
-                This ensures YAML sequences (lists) are properly indented with
-                spaces before the dash, e.g.:
-                    tags:
-                      - item
-                instead of:
-                    tags:
-                    - item
-                """
-                return super().increase_indent(flow, False)  # noqa: FBT003
-
-        def str_representer(dumper: Any, data: str) -> Any:  # noqa: ANN401
-            """Represent strings with unicode preservation.
-
-            Uses plain style for simple strings with unicode to preserve emojis
-            and other unicode characters. Falls back to quoted style for strings
-            with special YAML characters.
-            """
-            # Check if the string needs quoting (has special YAML characters)
-            needs_quoting = any(char in data for char in SPECIAL_YAML_CHARS)
-
-            # Also check for leading/trailing whitespace or special patterns
-            if (
-                needs_quoting
-                or data != data.strip()
-                or len(data.splitlines()) > 1
-                or not data
-            ):
-                # Let YAML choose the appropriate quoted style
-                return dumper.represent_scalar("tag:yaml.org,2002:str", data)
-
-            # Use plain style for simple strings to preserve unicode
-            return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="")
-
-        UnicodePreservingDumper.add_representer(str, str_representer)
-
-        kwargs.setdefault("Dumper", UnicodePreservingDumper)
-        kwargs.setdefault("default_flow_style", False)
-        kwargs.setdefault("allow_unicode", True)
-        kwargs["sort_keys"] = sort_keys
-
-        return yaml.dump(metadata, **kwargs).strip()  # type: ignore[call-overload]
+        sorted_data: dict[str, object] = {}
+        for key in sorted(data.keys()):
+            value = data[key]
+            if isinstance(value, dict):
+                sorted_data[key] = self._sort_dict_recursively(value)
+            else:
+                sorted_data[key] = value
+        return sorted_data
 
 
 class _SortingTOMLHandler:
@@ -263,7 +242,7 @@ def _handle_format_errors(
 def _format_with_handler(
     content: str,
     handler: Any,  # Handler instance  # noqa: ANN401
-    parse_func: Any,  # Parsing function (yaml.safe_load, etc.)  # noqa: ANN401
+    parse_func: Any,  # Parsing function (YAML().load, toml.loads, etc.)  # noqa: ANN401
     *,
     sort_keys: bool = True,
 ) -> str:
@@ -272,7 +251,7 @@ def _format_with_handler(
     Args:
         content: Raw front matter content (without delimiters).
         handler: Handler instance with export() method.
-        parse_func: Function to parse content (yaml.safe_load, toml.loads, etc.).
+        parse_func: Function to parse content (YAML().load, toml.loads, etc.).
         sort_keys: Whether to sort keys in the front matter.
 
     Returns:
@@ -296,7 +275,7 @@ def _format_with_handler(
         # Only return empty if the original content was truly empty
         if not content.strip():
             return ""
-        # For non-empty but unparseable content, raise error to preserve original
+        # For non-empty but unparsable content, raise error to preserve original
         msg = "Front matter contains no valid key-value pairs"
         raise ValueError(msg)
 
@@ -317,10 +296,11 @@ def format_yaml(content: str, *, strict: bool = False, sort_keys: bool = True) -
     """
     try:
         with _handle_format_errors(content, "YAML", strict=strict):
+            yaml = YAML()
             return _format_with_handler(
                 content,
                 _UnicodePreservingYAMLHandler(),
-                yaml.safe_load,
+                yaml.load,
                 sort_keys=sort_keys,
             )
     except FormatError as e:

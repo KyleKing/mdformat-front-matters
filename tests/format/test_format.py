@@ -22,6 +22,7 @@ fixtures = flatten(
         read_fixture_file(Path(__file__).parent / "fixtures" / fixture_path)
         for fixture_path in (
             "front_matters.md",
+            "comment_preservation.md",
             # From: https://gohugo.io/content-management/front-matter
             "hugo.md",
             # To determine interoperability with mdformat-frontmatter, copied from:

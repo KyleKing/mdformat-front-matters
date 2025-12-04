@@ -13,9 +13,9 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-  "PyYAML >= 6.0",
   "mdformat >= 0.7.19",
   "mdit-py-plugins >= 0.4.1",
+  "ruamel.yaml>=0.18.16",
   "toml >= 0.10.0",
 ]
 description = "An mdformat plugin to format YAML, TOML, or JSON front matter"
@@ -203,7 +203,7 @@ extras = ["test"]
 [tool.tox.env.type]
 basepython = ["py314"]
 commands = [["mypy", "./mdformat_front_matters", {default = [], extend = true, replace = "posargs"}]]
-deps = ["mypy>=1.18.2", "types-PyYAML>=6.0.12.20250915"]
+deps = ["mypy>=1.18.2"]
 
 [tool.tox.env_run_base]
 # Validates that commands are set
