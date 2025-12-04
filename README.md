@@ -80,7 +80,7 @@ Add this package wherever you use `mdformat` and the plugin will be auto-recogni
 ```yaml
 repos:
   - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.19
+    rev: 1.0.0
     hooks:
       - id: mdformat
         additional_dependencies:
@@ -163,8 +163,6 @@ draft = false
 md.render(text)
 # <h1>Example</h1>
 ```
-
--->
 
 ## Contributing
 

@@ -26,12 +26,12 @@ repos:
       - id: trailing-whitespace
         exclude: __snapshots__/.*\.ambr
   - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.19
+    rev: 1.0.0
     hooks:
       - id: mdformat
         additional_dependencies:
-          - mdformat-mkdocs[recommended]>=3.0.0
-          - mdformat-gfm-alerts>=1.0.1
+          - mdformat-mkdocs[recommended-mdsf]>=5.1.1
+          - mdformat-gfm-alerts>=2.0.0
         args: [--wrap=no]
         exclude: tests/.+\.md
         stages: ["pre-commit"]
