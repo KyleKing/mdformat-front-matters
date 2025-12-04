@@ -70,32 +70,35 @@ class _UnicodePreservingYAMLHandler:
         yaml.indent(mapping=2, sequence=4, offset=2)
 
         if sort_keys:
-            metadata = self._sort_dict_recursively(metadata)
+            self._sort_mappings_in_place(metadata)
 
         stream = StringIO()
         yaml.dump(metadata, stream)
         return stream.getvalue().strip()
 
-    def _sort_dict_recursively(
-        self,
-        data: dict[str, object],
-    ) -> dict[str, object]:
-        """Recursively sort dictionary keys.
+    def _sort_mappings_in_place(self, data: dict[str, object] | list[object]) -> None:
+        """Recursively sort dictionary keys in-place while preserving comments.
+
+        This uses the .insert() method of CommentedMap to preserve end-of-line
+        comments. The .pop() method doesn't delete comments, and .insert()
+        re-associates them with the key.
+
+        Based on: https://stackoverflow.com/a/51387713/3219667
 
         Args:
-            data: Dictionary to sort.
-
-        Returns:
-            Dictionary with sorted keys at all levels.
+            data: Dictionary or list to sort in-place.
         """
-        sorted_data: dict[str, object] = {}
-        for key in sorted(data.keys()):
-            value = data[key]
-            if isinstance(value, dict):
-                sorted_data[key] = self._sort_dict_recursively(value)
-            else:
-                sorted_data[key] = value
-        return sorted_data
+        if isinstance(data, list):
+            for elem in data:
+                self._sort_mappings_in_place(elem)
+            return
+        if not isinstance(data, dict):
+            return
+        # Sort in reverse order and insert at position 0 to get ascending order
+        for key in sorted(data, reverse=True):
+            value = data.pop(key)
+            self._sort_mappings_in_place(value)
+            data.insert(0, key, value)
 
 
 class _SortingTOMLHandler:
