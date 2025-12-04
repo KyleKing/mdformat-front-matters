@@ -13,6 +13,7 @@ from typing import Any
 import toml  # type: ignore[import-untyped]
 from mdformat.renderer import LOGGER
 from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
 SPECIAL_YAML_CHARS = {
     ":",
@@ -76,7 +77,9 @@ class _UnicodePreservingYAMLHandler:
         yaml.dump(metadata, stream)
         return stream.getvalue().strip()
 
-    def _sort_mappings_in_place(self, data: dict[str, object] | list[object]) -> None:
+    def _sort_mappings_in_place(
+        self, data: CommentedMap | CommentedSeq | dict[str, object] | list[object]
+    ) -> None:
         """Recursively sort dictionary keys in-place while preserving comments.
 
         This uses the .insert() method of CommentedMap to preserve end-of-line
@@ -90,15 +93,15 @@ class _UnicodePreservingYAMLHandler:
         """
         if isinstance(data, list):
             for elem in data:
-                self._sort_mappings_in_place(elem)
-            return
-        if not isinstance(data, dict):
+                if isinstance(elem, (dict, list)):
+                    self._sort_mappings_in_place(elem)
             return
         # Sort in reverse order and insert at position 0 to get ascending order
         for key in sorted(data, reverse=True):
             value = data.pop(key)
-            self._sort_mappings_in_place(value)
-            data.insert(0, key, value)
+            if isinstance(value, (dict, list)):
+                self._sort_mappings_in_place(value)
+            data.insert(0, key, value)  # type: ignore[union-attr]
 
 
 class _SortingTOMLHandler:

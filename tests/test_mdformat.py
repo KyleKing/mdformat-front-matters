@@ -48,7 +48,7 @@ Content.
     assert "# This is the header comment" in result
     # All keys should be sorted
     lines = result.split("\n")
-    key_lines = [l for l in lines if l and not l.startswith("#") and ":" in l]
+    key_lines = [li for li in lines if li and not li.startswith("#") and ":" in li]
     assert key_lines == ["a_field: value3", "m_field: value2", "z_field: value1"]
     # Block comment should be preserved (though position may vary)
     assert "# Comment before middle field" in result

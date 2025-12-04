@@ -23,6 +23,7 @@ def _extract_options_from_title(title: str) -> tuple[str, dict[str, object]]:
     r"""Extract mdformat options from test title.
 
     Supports newline-separated JSON: "Test name\n{\"option\": true}"
+    Or standalone JSON: "{\"option\": true}"
     If no JSON found, returns empty dict.
 
     Args:
@@ -31,6 +32,7 @@ def _extract_options_from_title(title: str) -> tuple[str, dict[str, object]]:
     Returns:
         Tuple of (cleaned_title, options_dict).
     """
+    # Check if title ends with JSON (after newline)
     if "\n" in title and (match := re.search(r"\n(\{.*\})\s*$", title)):
         json_str = match.group(1)
         clean_title = title[: match.start()].strip()
@@ -40,6 +42,15 @@ def _extract_options_from_title(title: str) -> tuple[str, dict[str, object]]:
             return title, {}
         else:
             return clean_title, {"plugin": {"front_matters": options}}
+
+    # Check if entire title is JSON
+    if title.strip().startswith("{") and title.strip().endswith("}"):
+        try:
+            options = json.loads(title.strip())
+        except json.JSONDecodeError:
+            return title, {}
+        else:
+            return title, {"plugin": {"front_matters": options}}
 
     return title, {}  # No options found
 
@@ -68,7 +79,6 @@ fixtures = flatten(
 )
 def test_format_fixtures(line, title, text, expected):
     _clean_title, options = _extract_options_from_title(title)
-
     output = mdformat.text(text, extensions={"front_matters"}, options=options or {})
 
     print_text(output, expected)
