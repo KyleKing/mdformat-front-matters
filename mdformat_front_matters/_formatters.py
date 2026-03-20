@@ -61,7 +61,7 @@ class _UnicodePreservingYAMLHandler:
         sort_keys = kwargs.pop("sort_keys", True)
 
         yaml = YAML()
-        yaml.preserve_quotes = False
+        yaml.preserve_quotes = True
         yaml.default_flow_style = False
         yaml.allow_unicode = True
         yaml.width = sys.maxsize  # Prevent line wrapping
