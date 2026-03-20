@@ -888,3 +888,85 @@ tags:
 
 ## What is it
 .
+
+Issue #12 - Double-quoted YAML strings preserved
+.
+---
+title: "My Post"
+description: "A blog post about stuff"
+unquoted: plain value
+---
+# Content
+.
+---
+title: "My Post"
+description: "A blog post about stuff"
+unquoted: plain value
+---
+
+# Content
+.
+
+Issue #12 - Single-quoted YAML strings preserved
+.
+---
+title: 'My Post'
+tag: 'single-quoted'
+plain: no quotes here
+---
+# Content
+.
+---
+title: 'My Post'
+tag: 'single-quoted'
+plain: no quotes here
+---
+
+# Content
+.
+
+Issue #12 - Mixed quote styles preserved
+.
+---
+double: "double quoted"
+single: 'single quoted'
+none: unquoted
+nested:
+  inner_double: "inner double"
+  inner_single: 'inner single'
+  inner_none: inner plain
+---
+# Content
+.
+---
+double: "double quoted"
+single: 'single quoted'
+none: unquoted
+nested:
+  inner_double: "inner double"
+  inner_single: 'inner single'
+  inner_none: inner plain
+---
+
+# Content
+.
+
+Issue #12 - Quoted strings in arrays preserved
+.
+---
+tags:
+  - "quoted tag"
+  - 'single tag'
+  - plain tag
+---
+# Content
+.
+---
+tags:
+  - "quoted tag"
+  - 'single tag'
+  - plain tag
+---
+
+# Content
+.

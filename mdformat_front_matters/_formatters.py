@@ -61,7 +61,7 @@ class _UnicodePreservingYAMLHandler:
         sort_keys = kwargs.pop("sort_keys", True)
 
         yaml = YAML()
-        yaml.preserve_quotes = False
+        yaml.preserve_quotes = True
         yaml.default_flow_style = False
         yaml.allow_unicode = True
         yaml.width = sys.maxsize  # Prevent line wrapping
@@ -303,6 +303,7 @@ def format_yaml(content: str, *, strict: bool = False, sort_keys: bool = True) -
     try:
         with _handle_format_errors(content, "YAML", strict=strict):
             yaml = YAML()
+            yaml.preserve_quotes = True
             return _format_with_handler(
                 content,
                 _UnicodePreservingYAMLHandler(),
