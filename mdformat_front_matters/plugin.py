@@ -38,13 +38,17 @@ def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
     )
     group.add_argument(
         "--normalize-front-matter",
-        action="store_true",
+        choices=["none", "minimal", "1.2"],
+        default=None,
+        metavar="{none,minimal,1.2}",
         help=(
-            "Normalize front matter formatting. "
-            "For YAML: strips unnecessary quotes from plain string values "
-            "(e.g. title: \"My Post\" becomes title: My Post). "
-            "Block scalar styles (| and >) are always preserved. "
-            "TOML and JSON are already normalized by default."
+            "Normalization level for front matter. "
+            "``minimal``: strips unnecessary YAML quotes, normalizes null (~ → null) "
+            "and boolean casing. "
+            "``1.2``: everything in minimal, plus upgrades YAML 1.1 boolean words "
+            "(yes/no/on/off and variants) to true/false. "
+            "TOML and JSON are unaffected. "
+            "Default: none (preserve original style)."
         ),
     )
 
@@ -74,15 +78,16 @@ def _render_front_matter(node: RenderTreeNode, context: RenderContext) -> str:
     # is stored as "strict_front_matter" in the options dict)
     strict = bool(get_conf(context.options, "strict_front_matter"))
     sort_keys = bool(get_conf(context.options, "sort_front_matter"))
-    normalize = bool(get_conf(context.options, "normalize_front_matter"))
+    raw_normalize = get_conf(context.options, "normalize_front_matter")
+    normalize_mode = str(raw_normalize) if raw_normalize is not None else "none"
 
     # Format the content based on type
     if format_type == "yaml":
-        formatted_content = format_yaml(content, strict=strict, sort_keys=sort_keys, normalize=normalize)
+        formatted_content = format_yaml(content, strict=strict, sort_keys=sort_keys, normalize_mode=normalize_mode)
     elif format_type == "toml":
-        formatted_content = format_toml(content, strict=strict, sort_keys=sort_keys, normalize=normalize)
+        formatted_content = format_toml(content, strict=strict, sort_keys=sort_keys, normalize_mode=normalize_mode)
     elif format_type == "json":
-        formatted_content = format_json(content, strict=strict, sort_keys=sort_keys, normalize=normalize)
+        formatted_content = format_json(content, strict=strict, sort_keys=sort_keys, normalize_mode=normalize_mode)
     else:
         # Unknown format, return as-is
         formatted_content = content

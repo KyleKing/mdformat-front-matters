@@ -70,7 +70,7 @@ All options are independent and composable. Configuration can be passed via:
     ```toml
     [plugin.front_matters]
     sort_front_matter = true
-    normalize_front_matter = true
+    normalize_front_matter = "minimal"  # or "1.2" or "none"
     strict_front_matter = true
     ```
 1. API: `mdformat.text(content, extensions={"front_matters"}, options={"plugin": {"front_matters": {...}}})`
@@ -78,7 +78,7 @@ All options are independent and composable. Configuration can be passed via:
 Option semantics:
 
 - `sort_front_matter`: Sort keys alphabetically (default: preserve original order)
-- `normalize_front_matter`: YAML only — strip unnecessary quotes from plain string values; block scalars (`|`, `>`) are always preserved (default: preserve original quote style)
+- `normalize_front_matter`: YAML only — `"none"` (default) preserves everything; `"minimal"` strips unnecessary quotes, normalizes null (`~` → `null`) and boolean case; `"1.2"` additionally upgrades unquoted YAML 1.1 boolean words (`yes`/`no`/`on`/`off`) to `true`/`false`
 - `strict_front_matter`: Raise on invalid front matter instead of preserving it (default: preserve original content on error)
 
 ### Testing Strategy

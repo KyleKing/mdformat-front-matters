@@ -14,6 +14,8 @@ import toml  # type: ignore[import-untyped]
 from mdformat.renderer import LOGGER
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
+from ruamel.yaml.representer import RoundTripRepresenter as _RoundTripRepresenter
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString, SingleQuotedScalarString
 
 SPECIAL_YAML_CHARS = {
     ":",
@@ -40,6 +42,34 @@ SPECIAL_YAML_CHARS = {
 }
 """These characters require quoting: : { } [ ] , & * # ? | - < > = ! % @ `."""
 
+_YAML11_TRUE_WORDS: frozenset[str] = frozenset({"y", "Y", "yes", "Yes", "YES", "on", "On", "ON"})
+_YAML11_FALSE_WORDS: frozenset[str] = frozenset({"n", "N", "no", "No", "NO", "off", "Off", "OFF"})
+
+
+class _NullNormalizingRepresenter(_RoundTripRepresenter):
+    """RoundTripRepresenter that normalizes null values and strips quote styles.
+
+    - ``None`` always outputs as ``null`` (not ``~``).
+    - ``SingleQuotedScalarString`` / ``DoubleQuotedScalarString`` are output as
+      plain scalars, stripping the original quote style. This is needed when the
+      loader used ``preserve_quotes=True`` (e.g. for YAML 1.1 boolean detection)
+      but the dumper should not honour those preserved styles.
+      ``LiteralScalarString`` / ``FoldedScalarString`` are intentionally excluded
+      so block scalar styles (``|``, ``>``) are always preserved.
+    """
+
+
+def _represent_as_plain_str(dumper: _NullNormalizingRepresenter, data: object) -> Any:
+    return dumper.represent_str(str.__new__(str, data))
+
+
+_NullNormalizingRepresenter.add_representer(
+    type(None),
+    lambda d, _: d.represent_scalar("tag:yaml.org,2002:null", "null"),
+)
+_NullNormalizingRepresenter.add_representer(SingleQuotedScalarString, _represent_as_plain_str)
+_NullNormalizingRepresenter.add_representer(DoubleQuotedScalarString, _represent_as_plain_str)
+
 
 class _RoundTripYAMLHandler:
     """Custom YAML handler for round-trip formatting with ruamel.yaml.
@@ -52,6 +82,10 @@ class _RoundTripYAMLHandler:
     or ``DoubleQuotedScalarString`` when ``preserve_quotes=True``, and wraps
     block scalars in ``LiteralScalarString`` / ``FoldedScalarString`` regardless.
     See: https://sourceforge.net/p/ruamel-yaml/code/ci/default/tree/constructor.py#l985
+
+    The ``normalize_mode`` kwarg controls normalization: ``"none"`` preserves
+    everything, ``"minimal"`` strips unnecessary quotes and normalizes null/booleans,
+    ``"1.2"`` additionally upgrades YAML 1.1 boolean words to ``true``/``false``.
     """
 
     def export(self, metadata: dict[str, object], **kwargs: object) -> str:
@@ -61,29 +95,32 @@ class _RoundTripYAMLHandler:
             metadata: Dictionary to export as YAML.
             **kwargs: Additional arguments. Recognized keys:
                 sort_keys: Whether to sort keys alphabetically (default ``True``).
-                normalize: When ``True``, strip unnecessary quotes from plain string
-                    values. Block scalar styles (``|``, ``>``) are always preserved.
-                    Defaults to ``False``.
+                normalize_mode: Normalization level — ``"none"`` preserves everything,
+                    ``"minimal"`` strips unnecessary quotes and normalizes null/booleans,
+                    ``"1.2"`` additionally upgrades YAML 1.1 boolean words to
+                    ``true``/``false``. Defaults to ``"none"``.
 
         Returns:
             YAML string with preserved unicode characters and comments.
         """
         sort_keys = kwargs.pop("sort_keys", True)
-        normalize = bool(kwargs.pop("normalize", False))
+        normalize_mode = str(kwargs.pop("normalize_mode", "none"))
 
         yaml = YAML()
-        if not normalize:
+        if normalize_mode == "none":
             yaml.preserve_quotes = True
+        else:
+            yaml.Representer = _NullNormalizingRepresenter
         yaml.default_flow_style = False
         yaml.allow_unicode = True
-        yaml.width = sys.maxsize  # Prevent line wrapping
-
-        # Consistent indentation for previous mdformat-frontmatter users:
-        # https://github.com/butler54/mdformat-frontmatter/blob/93bb972b6044d22043d6c191a2e73858ff09d3e5/mdformat_frontmatter/plugin.py#L14
+        yaml.width = sys.maxsize
         yaml.indent(mapping=2, sequence=4, offset=2)
 
         if sort_keys:
             self._sort_mappings_in_place(metadata)
+
+        if normalize_mode == "1.2":
+            self._upgrade_yaml11_booleans(metadata)
 
         stream = StringIO()
         yaml.dump(metadata, stream)
@@ -115,6 +152,39 @@ class _RoundTripYAMLHandler:
                 self._sort_mappings_in_place(value)
             data.insert(0, key, value)  # type: ignore[union-attr]
 
+    def _upgrade_yaml11_booleans(
+        self, data: CommentedMap | CommentedSeq | dict[str, object] | list[object]
+    ) -> None:
+        """Recursively convert unquoted YAML 1.1 boolean words to Python booleans.
+
+        Only plain str values are converted — SingleQuotedScalarString and
+        DoubleQuotedScalarString (loaded when preserve_quotes=True) are left as-is,
+        since they represent intentional string values, not YAML 1.1 booleans.
+        """
+        if isinstance(data, dict):
+            for key in data:
+                value = data[key]
+                if isinstance(value, str) and not isinstance(
+                    value, (SingleQuotedScalarString, DoubleQuotedScalarString)
+                ):
+                    if value in _YAML11_TRUE_WORDS:
+                        data[key] = True
+                    elif value in _YAML11_FALSE_WORDS:
+                        data[key] = False
+                elif isinstance(value, (dict, list)):
+                    self._upgrade_yaml11_booleans(value)
+        elif isinstance(data, list):
+            for i, item in enumerate(data):
+                if isinstance(item, str) and not isinstance(
+                    item, (SingleQuotedScalarString, DoubleQuotedScalarString)
+                ):
+                    if item in _YAML11_TRUE_WORDS:
+                        data[i] = True  # type: ignore[index]
+                    elif item in _YAML11_FALSE_WORDS:
+                        data[i] = False  # type: ignore[index]
+                elif isinstance(item, (dict, list)):
+                    self._upgrade_yaml11_booleans(item)
+
 
 class _SortingTOMLHandler:
     """Custom TOML handler that supports key sorting."""
@@ -124,12 +194,16 @@ class _SortingTOMLHandler:
 
         Args:
             metadata: Dictionary to export as TOML.
-            **kwargs: Additional arguments (ignored).
+            **kwargs: Additional arguments. Recognized keys:
+                sort_keys: Whether to sort keys alphabetically (default ``True``).
+                normalize_mode: Accepted for API consistency; TOML output is always
+                    normalized regardless of this value.
 
         Returns:
             TOML string.
         """
         sort_keys_val = kwargs.pop("sort_keys", True)
+        kwargs.pop("normalize_mode", None)
         sort_keys = bool(sort_keys_val) if sort_keys_val is not None else True
         if sort_keys:
             metadata = dict(sorted(metadata.items()))
@@ -144,12 +218,16 @@ class _SortingJSONHandler:
 
         Args:
             metadata: Dictionary to export as JSON.
-            **kwargs: Additional arguments (ignored).
+            **kwargs: Additional arguments. Recognized keys:
+                sort_keys: Whether to sort keys alphabetically (default ``True``).
+                normalize_mode: Accepted for API consistency; JSON output is always
+                    normalized regardless of this value.
 
         Returns:
             JSON string.
         """
         sort_keys_val = kwargs.pop("sort_keys", True)
+        kwargs.pop("normalize_mode", None)
         sort_keys = bool(sort_keys_val) if sort_keys_val is not None else True
         return json.dumps(metadata, indent=4, sort_keys=sort_keys)
 
@@ -263,7 +341,7 @@ def _format_with_handler(
     parse_func: Any,  # Parsing function (YAML().load, toml.loads, etc.)  # noqa: ANN401
     *,
     sort_keys: bool = True,
-    normalize: bool = False,
+    normalize_mode: str = "none",
 ) -> str:
     """Format front matter using a handler and parsing function.
 
@@ -272,7 +350,7 @@ def _format_with_handler(
         handler: Handler instance with export() method.
         parse_func: Function to parse content (YAML().load, toml.loads, etc.).
         sort_keys: Whether to sort keys in the front matter.
-        normalize: Whether to normalize formatting (e.g. strip unnecessary YAML quotes).
+        normalize_mode: Normalization level passed through to the handler.
 
     Returns:
         Formatted front matter (without delimiters).
@@ -283,35 +361,30 @@ def _format_with_handler(
     """
     metadata = parse_func(content)
 
-    # Metadata must be a dictionary (key-value pairs)
-    # Scalar values, lists, etc. are not valid front matter
     if not isinstance(metadata, dict):
         msg = f"Front matter must be key-value pairs, got {type(metadata).__name__}"
         raise TypeError(msg)
 
-    # Allow empty front matter blocks (CommonMark v0.29 spec example 68)
-    # Empty content between delimiters is valid and should be preserved
     if not metadata:
-        # Only return empty if the original content was truly empty
         if not content.strip():
             return ""
-        # For non-empty but unparsable content, raise error to preserve original
         msg = "Front matter contains no valid key-value pairs"
         raise ValueError(msg)
 
-    return handler.export(metadata, sort_keys=sort_keys, normalize=normalize).strip()
+    return handler.export(metadata, sort_keys=sort_keys, normalize_mode=normalize_mode).strip()
 
 
-def format_yaml(content: str, *, strict: bool = False, sort_keys: bool = True, normalize: bool = False) -> str:
+def format_yaml(content: str, *, strict: bool = False, sort_keys: bool = True, normalize_mode: str = "none") -> str:
     """Format YAML front matter content.
 
     Args:
         content: Raw YAML string to format (without delimiters).
         strict: If True, raise exceptions instead of preserving original.
         sort_keys: If True, sort keys alphabetically.
-        normalize: If True, strip unnecessary quotes from plain string values.
-            Block scalar styles (``|``, ``>``) are always preserved. Defaults
-            to ``False`` (preserve original quote style).
+        normalize_mode: Normalization level — ``"none"`` preserves everything,
+            ``"minimal"`` strips unnecessary quotes and normalizes null/booleans,
+            ``"1.2"`` additionally upgrades YAML 1.1 boolean words (yes/no/on/off
+            and variants) to ``true``/``false``.
 
     Returns:
         Formatted YAML string (without delimiters), or original content if
@@ -319,28 +392,29 @@ def format_yaml(content: str, *, strict: bool = False, sort_keys: bool = True, n
     """
     try:
         with _handle_format_errors(content, "YAML", strict=strict):
-            yaml = YAML()
-            if not normalize:
-                yaml.preserve_quotes = True
+            loader_yaml = YAML()
+            if normalize_mode in ("none", "1.2"):
+                loader_yaml.preserve_quotes = True
             return _format_with_handler(
                 content,
                 _RoundTripYAMLHandler(),
-                yaml.load,
+                loader_yaml.load,
                 sort_keys=sort_keys,
-                normalize=normalize,
+                normalize_mode=normalize_mode,
             )
-    except FormatError as e:
-        return e.content
+    except FormatError as err:
+        return err.content
 
 
-def format_toml(content: str, *, strict: bool = False, sort_keys: bool = True, normalize: bool = False) -> str:
+def format_toml(content: str, *, strict: bool = False, sort_keys: bool = True, normalize_mode: str = "none") -> str:
     """Format TOML front matter content.
 
     Args:
         content: Raw TOML string to format (without delimiters).
         strict: If True, raise exceptions instead of preserving original.
         sort_keys: If True, sort keys alphabetically.
-        normalize: Accepted for API consistency; TOML output is always normalized.
+        normalize_mode: Accepted for API consistency; TOML output is always normalized
+            regardless of this value.
 
     Returns:
         Formatted TOML string (without delimiters), or original content if
@@ -353,21 +427,22 @@ def format_toml(content: str, *, strict: bool = False, sort_keys: bool = True, n
                 _SortingTOMLHandler(),
                 toml.loads,
                 sort_keys=sort_keys,
-                normalize=normalize,
+                normalize_mode=normalize_mode,
             )
             return _normalize_toml_output(formatted)
-    except FormatError as e:
-        return e.content
+    except FormatError as err:
+        return err.content
 
 
-def format_json(content: str, *, strict: bool = False, sort_keys: bool = True, normalize: bool = False) -> str:
+def format_json(content: str, *, strict: bool = False, sort_keys: bool = True, normalize_mode: str = "none") -> str:
     """Format JSON front matter content.
 
     Args:
         content: Raw JSON string to format (without delimiters).
         strict: If True, raise exceptions instead of preserving original.
         sort_keys: If True, sort keys alphabetically.
-        normalize: Accepted for API consistency; JSON output is always normalized.
+        normalize_mode: Accepted for API consistency; JSON output is always normalized
+            regardless of this value.
 
     Returns:
         Formatted JSON string (without delimiters), or original content if
@@ -380,7 +455,7 @@ def format_json(content: str, *, strict: bool = False, sort_keys: bool = True, n
                 _SortingJSONHandler(),
                 json.loads,
                 sort_keys=sort_keys,
-                normalize=normalize,
+                normalize_mode=normalize_mode,
             )
-    except FormatError as e:
-        return e.content
+    except FormatError as err:
+        return err.content

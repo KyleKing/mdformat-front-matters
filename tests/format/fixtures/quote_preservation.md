@@ -35,7 +35,7 @@ Content.
 .
 
 YAML necessary quotes preserved under normalize (colon, bool-like, empty)
-{"normalize_front_matter": true}
+{"normalize_front_matter": "minimal"}
 .
 ---
 title: "value: with colon"
@@ -55,7 +55,7 @@ Content.
 .
 
 YAML double-quoted strings stripped under normalize
-{"normalize_front_matter": true}
+{"normalize_front_matter": "minimal"}
 .
 ---
 title: "My Post"
@@ -75,7 +75,7 @@ Content.
 .
 
 YAML single-quoted strings stripped under normalize
-{"normalize_front_matter": true}
+{"normalize_front_matter": "minimal"}
 .
 ---
 title: 'My Post'
@@ -93,7 +93,7 @@ Content.
 .
 
 YAML block literal style preserved under normalize
-{"normalize_front_matter": true}
+{"normalize_front_matter": "minimal"}
 .
 ---
 description: |
@@ -115,7 +115,7 @@ Content.
 .
 
 YAML block folded style preserved under normalize
-{"normalize_front_matter": true}
+{"normalize_front_matter": "minimal"}
 .
 ---
 description: >
