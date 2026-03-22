@@ -14,6 +14,7 @@ import toml  # type: ignore[import-untyped]
 from mdformat.renderer import LOGGER
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
+from ruamel.yaml.nodes import ScalarNode
 from ruamel.yaml.representer import RoundTripRepresenter as _RoundTripRepresenter
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString, SingleQuotedScalarString
 
@@ -46,6 +47,14 @@ _YAML11_TRUE_WORDS: frozenset[str] = frozenset({"y", "Y", "yes", "Yes", "YES", "
 _YAML11_FALSE_WORDS: frozenset[str] = frozenset({"n", "N", "no", "No", "NO", "off", "Off", "OFF"})
 
 
+def _as_yaml12_bool(value: str) -> bool | None:
+    if value in _YAML11_TRUE_WORDS:
+        return True
+    if value in _YAML11_FALSE_WORDS:
+        return False
+    return None
+
+
 class _NullNormalizingRepresenter(_RoundTripRepresenter):
     """RoundTripRepresenter that normalizes null values and strips quote styles.
 
@@ -59,7 +68,7 @@ class _NullNormalizingRepresenter(_RoundTripRepresenter):
     """
 
 
-def _represent_as_plain_str(dumper: _NullNormalizingRepresenter, data: object) -> Any:
+def _represent_as_plain_str(dumper: _NullNormalizingRepresenter, data: object) -> ScalarNode:
     return dumper.represent_str(str.__new__(str, data))
 
 
@@ -167,23 +176,24 @@ class _RoundTripYAMLHandler:
                 if isinstance(value, str) and not isinstance(
                     value, (SingleQuotedScalarString, DoubleQuotedScalarString)
                 ):
-                    if value in _YAML11_TRUE_WORDS:
-                        data[key] = True
-                    elif value in _YAML11_FALSE_WORDS:
-                        data[key] = False
+                    if (converted := _as_yaml12_bool(value)) is not None:
+                        data[key] = converted
                 elif isinstance(value, (dict, list)):
                     self._upgrade_yaml11_booleans(value)
         elif isinstance(data, list):
-            for i, item in enumerate(data):
-                if isinstance(item, str) and not isinstance(
-                    item, (SingleQuotedScalarString, DoubleQuotedScalarString)
-                ):
-                    if item in _YAML11_TRUE_WORDS:
-                        data[i] = True  # type: ignore[index]
-                    elif item in _YAML11_FALSE_WORDS:
-                        data[i] = False  # type: ignore[index]
-                elif isinstance(item, (dict, list)):
-                    self._upgrade_yaml11_booleans(item)
+            self._upgrade_yaml11_booleans_in_list(data)
+
+    def _upgrade_yaml11_booleans_in_list(
+        self, data: CommentedSeq | list[object]
+    ) -> None:
+        for i, item in enumerate(data):
+            if isinstance(item, str) and not isinstance(
+                item, (SingleQuotedScalarString, DoubleQuotedScalarString)
+            ):
+                if (converted := _as_yaml12_bool(item)) is not None:
+                    data[i] = converted
+            elif isinstance(item, (dict, list)):
+                self._upgrade_yaml11_booleans(item)
 
 
 class _SortingTOMLHandler:
@@ -393,7 +403,7 @@ def format_yaml(content: str, *, strict: bool = False, sort_keys: bool = True, n
     try:
         with _handle_format_errors(content, "YAML", strict=strict):
             loader_yaml = YAML()
-            if normalize_mode in ("none", "1.2"):
+            if normalize_mode in {"none", "1.2"}:
                 loader_yaml.preserve_quotes = True
             return _format_with_handler(
                 content,

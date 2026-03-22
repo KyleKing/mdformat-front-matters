@@ -122,11 +122,11 @@ mdformat document.md --sort-front-matter
 
 Use `--normalize-front-matter` to apply progressively more opinionated YAML normalization. The flag accepts one of three values:
 
-| Mode | What changes |
-|---|---|
-| `none` (default) | Nothing — full round-trip, all styles preserved |
-| `minimal` | Strip unnecessary quotes + null normalization + boolean case |
-| `1.2` | Everything in `minimal` + YAML 1.1 boolean word upgrade |
+| Mode             | What changes                                                 |
+| ---------------- | ------------------------------------------------------------ |
+| `none` (default) | Nothing — full round-trip, all styles preserved              |
+| `minimal`        | Strip unnecessary quotes + null normalization + boolean case |
+| `1.2`            | Everything in `minimal` + YAML 1.1 boolean word upgrade      |
 
 ```sh
 # Default — preserve everything
