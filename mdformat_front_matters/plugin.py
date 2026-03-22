@@ -36,6 +36,17 @@ def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
             "By default, the original key order is preserved."
         ),
     )
+    group.add_argument(
+        "--normalize-front-matter",
+        action="store_true",
+        help=(
+            "Normalize front matter formatting. "
+            "For YAML: strips unnecessary quotes from plain string values "
+            "(e.g. title: \"My Post\" becomes title: My Post). "
+            "Block scalar styles (| and >) are always preserved. "
+            "TOML and JSON are already normalized by default."
+        ),
+    )
 
 
 def update_mdit(mdit: MarkdownIt) -> None:
@@ -59,22 +70,19 @@ def _render_front_matter(node: RenderTreeNode, context: RenderContext) -> str:
     content = node.content
     markup = node.markup
 
-    # Check if strict mode is enabled
-    # Note: argparse converts hyphens to underscores, so --strict-front-matter
-    # is stored as "strict_front_matter" in the options dict
+    # Note: argparse converts hyphens to underscores (e.g. --strict-front-matter
+    # is stored as "strict_front_matter" in the options dict)
     strict = bool(get_conf(context.options, "strict_front_matter"))
-    # Check if sorting is enabled
-    # Note: argparse converts hyphens to underscores, so --sort-front-matter
-    # is stored as "sort_front_matter" in the options dict
     sort_keys = bool(get_conf(context.options, "sort_front_matter"))
+    normalize = bool(get_conf(context.options, "normalize_front_matter"))
 
     # Format the content based on type
     if format_type == "yaml":
-        formatted_content = format_yaml(content, strict=strict, sort_keys=sort_keys)
+        formatted_content = format_yaml(content, strict=strict, sort_keys=sort_keys, normalize=normalize)
     elif format_type == "toml":
-        formatted_content = format_toml(content, strict=strict, sort_keys=sort_keys)
+        formatted_content = format_toml(content, strict=strict, sort_keys=sort_keys, normalize=normalize)
     elif format_type == "json":
-        formatted_content = format_json(content, strict=strict, sort_keys=sort_keys)
+        formatted_content = format_json(content, strict=strict, sort_keys=sort_keys, normalize=normalize)
     else:
         # Unknown format, return as-is
         formatted_content = content

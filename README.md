@@ -13,7 +13,9 @@ An [mdformat](https://github.com/executablebooks/mdformat) plugin for normalizin
 
 - **Multi-format support**: Handles YAML (`---`), TOML (`+++`), and JSON (`{...}`) front matter
 - **Automatic normalization**: Formats front matter consistently (preserves key order by default, standardized indentation)
+- **Quote preservation**: YAML string quotes (`"double"`, `'single'`, `|` block literal, `>` block folded) are preserved by default
 - **Configurable sorting**: Option to sort keys alphabetically with `--sort-front-matter`
+- **Quote normalization**: Option to strip unnecessary YAML quotes with `--normalize-front-matter`
 - **Error resilient**: Preserves original content if parsing fails. Will error only if `strict` mode is set
 - **Zero configuration**: Works out of the box with mdformat
 
@@ -102,6 +104,8 @@ pipx inject mdformat mdformat-front-matters
 
 ### Configuration Options
 
+All options are independent and composable — use any combination.
+
 #### Key Sorting
 
 By default, front matter keys preserve their original order. To sort keys alphabetically for consistency, use the `--sort-front-matter` flag.
@@ -113,6 +117,46 @@ mdformat document.md
 # Sort keys alphabetically
 mdformat document.md --sort-front-matter
 ```
+
+#### YAML Quote Normalization
+
+By default, YAML string quote styles are preserved exactly as written — double-quoted, single-quoted, and block scalars (`|`, `>`) all round-trip unchanged. Use `--normalize-front-matter` to strip unnecessary quotes from plain string values.
+
+```sh
+# Default behavior - preserves quote style
+mdformat document.md
+
+# Strip unnecessary quotes
+mdformat document.md --normalize-front-matter
+```
+
+Before:
+
+```yaml
+---
+title: "My Post"
+author: 'Jane Doe'
+description: |
+  A multi-line
+  description.
+---
+```
+
+After `--normalize-front-matter`:
+
+```yaml
+---
+title: My Post
+author: Jane Doe
+description: |
+  A multi-line
+  description.
+---
+```
+
+Quotes that are semantically necessary are always preserved — for example, values containing colons (`value: with colon`), bool-like strings (`"true"`, `"false"`), and empty strings (`""`). Block scalar styles (`|` and `>`) are always preserved regardless of this option.
+
+TOML and JSON are unaffected by `--normalize-front-matter` since they are always output in a canonical form.
 
 #### Strict Mode
 
@@ -139,6 +183,29 @@ repos:
         args: [--strict-front-matter]
         additional_dependencies:
           - mdformat-front-matters
+```
+
+#### Configuration File
+
+All options can be set in `.mdformat.toml` instead of passing CLI flags:
+
+```toml
+[plugin.front_matters]
+sort_front_matter = true
+normalize_front_matter = true
+strict_front_matter = true
+```
+
+Or via the Python API:
+
+```python
+import mdformat
+
+mdformat.text(
+    content,
+    extensions={"front_matters"},
+    options={"plugin": {"front_matters": {"normalize_front_matter": True}}},
+)
 ```
 
 ## HTML Rendering

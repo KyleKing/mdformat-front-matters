@@ -63,15 +63,23 @@ The package implements mdformat's plugin interface with up to four key exports i
 
 ### Configuration Options
 
-Configuration can be passed via:
+All options are independent and composable. Configuration can be passed via:
 
-1. Example CLI arguments: `--cli-argument`
-1. Example TOML config file (`.mdformat.toml`):
+1. CLI arguments: `--sort-front-matter`, `--normalize-front-matter`, `--strict-front-matter`
+1. TOML config file (`.mdformat.toml`):
     ```toml
     [plugin.front_matters]
-    cli_argument = true
+    sort_front_matter = true
+    normalize_front_matter = true
+    strict_front_matter = true
     ```
-1. API: `mdformat.text(content, extensions={"front_matters"}, options={...})`
+1. API: `mdformat.text(content, extensions={"front_matters"}, options={"plugin": {"front_matters": {...}}})`
+
+Option semantics:
+
+- `sort_front_matter`: Sort keys alphabetically (default: preserve original order)
+- `normalize_front_matter`: YAML only — strip unnecessary quotes from plain string values; block scalars (`|`, `>`) are always preserved (default: preserve original quote style)
+- `strict_front_matter`: Raise on invalid front matter instead of preserving it (default: preserve original content on error)
 
 ### Testing Strategy
 

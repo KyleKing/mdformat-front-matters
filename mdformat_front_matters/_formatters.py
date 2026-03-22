@@ -41,27 +41,39 @@ SPECIAL_YAML_CHARS = {
 """These characters require quoting: : { } [ ] , & * # ? | - < > = ! % @ `."""
 
 
-class _UnicodePreservingYAMLHandler:
-    """Custom YAML handler that preserves unicode characters and comments.
+class _RoundTripYAMLHandler:
+    """Custom YAML handler for round-trip formatting with ruamel.yaml.
 
-    This handler uses ruamel.yaml for round-trip preservation of comments
-    and outputs unicode characters (including emojis) in their original form.
+    Preserves unicode characters (including emojis), inline and block comments,
+    and optionally the original quote style of string scalars (single-quoted,
+    double-quoted, literal block ``|``, folded block ``>``).
+
+    ruamel.yaml's constructor wraps quoted scalars in ``SingleQuotedScalarString``
+    or ``DoubleQuotedScalarString`` when ``preserve_quotes=True``, and wraps
+    block scalars in ``LiteralScalarString`` / ``FoldedScalarString`` regardless.
+    See: https://sourceforge.net/p/ruamel-yaml/code/ci/default/tree/constructor.py#l985
     """
 
     def export(self, metadata: dict[str, object], **kwargs: object) -> str:
-        """Export metadata as YAML with unicode and comment preservation.
+        """Export metadata as YAML, preserving unicode, comments, and optionally quotes.
 
         Args:
             metadata: Dictionary to export as YAML.
-            **kwargs: Additional arguments.
+            **kwargs: Additional arguments. Recognized keys:
+                sort_keys: Whether to sort keys alphabetically (default ``True``).
+                normalize: When ``True``, strip unnecessary quotes from plain string
+                    values. Block scalar styles (``|``, ``>``) are always preserved.
+                    Defaults to ``False``.
 
         Returns:
             YAML string with preserved unicode characters and comments.
         """
         sort_keys = kwargs.pop("sort_keys", True)
+        normalize = bool(kwargs.pop("normalize", False))
 
         yaml = YAML()
-        yaml.preserve_quotes = True
+        if not normalize:
+            yaml.preserve_quotes = True
         yaml.default_flow_style = False
         yaml.allow_unicode = True
         yaml.width = sys.maxsize  # Prevent line wrapping
@@ -251,6 +263,7 @@ def _format_with_handler(
     parse_func: Any,  # Parsing function (YAML().load, toml.loads, etc.)  # noqa: ANN401
     *,
     sort_keys: bool = True,
+    normalize: bool = False,
 ) -> str:
     """Format front matter using a handler and parsing function.
 
@@ -259,6 +272,7 @@ def _format_with_handler(
         handler: Handler instance with export() method.
         parse_func: Function to parse content (YAML().load, toml.loads, etc.).
         sort_keys: Whether to sort keys in the front matter.
+        normalize: Whether to normalize formatting (e.g. strip unnecessary YAML quotes).
 
     Returns:
         Formatted front matter (without delimiters).
@@ -285,16 +299,19 @@ def _format_with_handler(
         msg = "Front matter contains no valid key-value pairs"
         raise ValueError(msg)
 
-    return handler.export(metadata, sort_keys=sort_keys).strip()
+    return handler.export(metadata, sort_keys=sort_keys, normalize=normalize).strip()
 
 
-def format_yaml(content: str, *, strict: bool = False, sort_keys: bool = True) -> str:
+def format_yaml(content: str, *, strict: bool = False, sort_keys: bool = True, normalize: bool = False) -> str:
     """Format YAML front matter content.
 
     Args:
         content: Raw YAML string to format (without delimiters).
         strict: If True, raise exceptions instead of preserving original.
         sort_keys: If True, sort keys alphabetically.
+        normalize: If True, strip unnecessary quotes from plain string values.
+            Block scalar styles (``|``, ``>``) are always preserved. Defaults
+            to ``False`` (preserve original quote style).
 
     Returns:
         Formatted YAML string (without delimiters), or original content if
@@ -303,24 +320,27 @@ def format_yaml(content: str, *, strict: bool = False, sort_keys: bool = True) -
     try:
         with _handle_format_errors(content, "YAML", strict=strict):
             yaml = YAML()
-            yaml.preserve_quotes = True
+            if not normalize:
+                yaml.preserve_quotes = True
             return _format_with_handler(
                 content,
-                _UnicodePreservingYAMLHandler(),
+                _RoundTripYAMLHandler(),
                 yaml.load,
                 sort_keys=sort_keys,
+                normalize=normalize,
             )
     except FormatError as e:
         return e.content
 
 
-def format_toml(content: str, *, strict: bool = False, sort_keys: bool = True) -> str:
+def format_toml(content: str, *, strict: bool = False, sort_keys: bool = True, normalize: bool = False) -> str:
     """Format TOML front matter content.
 
     Args:
         content: Raw TOML string to format (without delimiters).
         strict: If True, raise exceptions instead of preserving original.
         sort_keys: If True, sort keys alphabetically.
+        normalize: Accepted for API consistency; TOML output is always normalized.
 
     Returns:
         Formatted TOML string (without delimiters), or original content if
@@ -333,19 +353,21 @@ def format_toml(content: str, *, strict: bool = False, sort_keys: bool = True) -
                 _SortingTOMLHandler(),
                 toml.loads,
                 sort_keys=sort_keys,
+                normalize=normalize,
             )
             return _normalize_toml_output(formatted)
     except FormatError as e:
         return e.content
 
 
-def format_json(content: str, *, strict: bool = False, sort_keys: bool = True) -> str:
+def format_json(content: str, *, strict: bool = False, sort_keys: bool = True, normalize: bool = False) -> str:
     """Format JSON front matter content.
 
     Args:
         content: Raw JSON string to format (without delimiters).
         strict: If True, raise exceptions instead of preserving original.
         sort_keys: If True, sort keys alphabetically.
+        normalize: Accepted for API consistency; JSON output is always normalized.
 
     Returns:
         Formatted JSON string (without delimiters), or original content if
@@ -358,6 +380,7 @@ def format_json(content: str, *, strict: bool = False, sort_keys: bool = True) -
                 _SortingJSONHandler(),
                 json.loads,
                 sort_keys=sort_keys,
+                normalize=normalize,
             )
     except FormatError as e:
         return e.content
