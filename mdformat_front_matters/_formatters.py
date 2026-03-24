@@ -56,15 +56,18 @@ def _as_yaml12_bool(value: str) -> bool | None:
 
 
 class _NullNormalizingRepresenter(_RoundTripRepresenter):
-    """RoundTripRepresenter that normalizes null values and strips quote styles.
+    """Representer for normalize modes.
 
-    - ``None`` always outputs as ``null`` (not ``~``).
-    - ``SingleQuotedScalarString`` / ``DoubleQuotedScalarString`` are output as
-      plain scalars, stripping the original quote style. This is needed when the
-      loader used ``preserve_quotes=True`` (e.g. for YAML 1.1 boolean detection)
-      but the dumper should not honour those preserved styles.
-      ``LiteralScalarString`` / ``FoldedScalarString`` are intentionally excluded
-      so block scalar styles (``|``, ``>``) are always preserved.
+    Overrides at the representer level rather than walking the tree post-load,
+    because ``_RoundTripRepresenter`` registers a ``ScalarString`` representer
+    that is found via MRO before the base ``str`` representer — a tree walk
+    converting to plain ``str`` would still hit that path.
+
+    ``SingleQuotedScalarString`` / ``DoubleQuotedScalarString`` → plain scalars
+    (strips quote style the loader preserved for YAML 1.1 boolean detection).
+    ``LiteralScalarString`` / ``FoldedScalarString`` deliberately excluded so
+    block scalar styles (``|``, ``>``) are always preserved.
+    ``None`` → ``null`` (not ``~``).
     """
 
 
@@ -81,37 +84,15 @@ _NullNormalizingRepresenter.add_representer(DoubleQuotedScalarString, _represent
 
 
 class _RoundTripYAMLHandler:
-    """Custom YAML handler for round-trip formatting with ruamel.yaml.
+    """YAML round-trip handler preserving unicode, comments, and configurable quote style.
 
-    Preserves unicode characters (including emojis), inline and block comments,
-    and optionally the original quote style of string scalars (single-quoted,
-    double-quoted, literal block ``|``, folded block ``>``).
-
-    ruamel.yaml's constructor wraps quoted scalars in ``SingleQuotedScalarString``
-    or ``DoubleQuotedScalarString`` when ``preserve_quotes=True``, and wraps
-    block scalars in ``LiteralScalarString`` / ``FoldedScalarString`` regardless.
+    ruamel.yaml wraps quoted scalars in ``SingleQuotedScalarString`` /
+    ``DoubleQuotedScalarString`` when ``preserve_quotes=True``, and block scalars
+    in ``LiteralScalarString`` / ``FoldedScalarString`` unconditionally.
     See: https://sourceforge.net/p/ruamel-yaml/code/ci/default/tree/constructor.py#l985
-
-    The ``normalize_mode`` kwarg controls normalization: ``"none"`` preserves
-    everything, ``"minimal"`` strips unnecessary quotes and normalizes null/booleans,
-    ``"1.2"`` additionally upgrades YAML 1.1 boolean words to ``true``/``false``.
     """
 
     def export(self, metadata: dict[str, object], **kwargs: object) -> str:
-        """Export metadata as YAML, preserving unicode, comments, and optionally quotes.
-
-        Args:
-            metadata: Dictionary to export as YAML.
-            **kwargs: Additional arguments. Recognized keys:
-                sort_keys: Whether to sort keys alphabetically (default ``True``).
-                normalize_mode: Normalization level — ``"none"`` preserves everything,
-                    ``"minimal"`` strips unnecessary quotes and normalizes null/booleans,
-                    ``"1.2"`` additionally upgrades YAML 1.1 boolean words to
-                    ``true``/``false``. Defaults to ``"none"``.
-
-        Returns:
-            YAML string with preserved unicode characters and comments.
-        """
         sort_keys = kwargs.pop("sort_keys", True)
         normalize_mode = str(kwargs.pop("normalize_mode", "none"))
 
@@ -138,16 +119,10 @@ class _RoundTripYAMLHandler:
     def _sort_mappings_in_place(
         self, data: CommentedMap | CommentedSeq | dict[str, object] | list[object]
     ) -> None:
-        """Recursively sort dictionary keys in-place while preserving comments.
+        """Sort keys in-place using ``CommentedMap.insert()`` to preserve EOL comments.
 
-        This uses the .insert() method of CommentedMap to preserve end-of-line
-        comments. The .pop() method doesn't delete comments, and .insert()
-        re-associates them with the key.
-
+        ``pop()`` detaches comments from keys; ``insert()`` re-associates them.
         Based on: https://stackoverflow.com/a/51387713/3219667
-
-        Args:
-            data: Dictionary or list to sort in-place.
         """
         if isinstance(data, list):
             for elem in data:
@@ -164,11 +139,13 @@ class _RoundTripYAMLHandler:
     def _upgrade_yaml11_booleans(
         self, data: CommentedMap | CommentedSeq | dict[str, object] | list[object]
     ) -> None:
-        """Recursively convert unquoted YAML 1.1 boolean words to Python booleans.
+        """Convert unquoted YAML 1.1 boolean words to Python booleans.
 
-        Only plain str values are converted — SingleQuotedScalarString and
-        DoubleQuotedScalarString (loaded when preserve_quotes=True) are left as-is,
-        since they represent intentional string values, not YAML 1.1 booleans.
+        Quoted values (``SingleQuotedScalarString`` / ``DoubleQuotedScalarString``)
+        are skipped — the author explicitly quoted them to signal "this is a string,
+        not a boolean". The loader must have used ``preserve_quotes=True`` for this
+        distinction to be available; ``minimal`` mode omits that and thus cannot
+        safely upgrade YAML 1.1 booleans.
         """
         if isinstance(data, dict):
             for key in data:
@@ -243,16 +220,6 @@ class _SortingJSONHandler:
 
 
 def _normalize_toml_output(content: str) -> str:
-    """Normalize TOML output.
-
-    Removes extra blank lines and trailing commas added by the TOML library.
-
-    Args:
-        content: TOML content to normalize.
-
-    Returns:
-        Normalized TOML content.
-    """
     # Remove blank lines before section headers like [section]
     # but NOT array tables [[section]] - they should keep blank lines
     content = re.sub(r"\n\n+(\[(?!\[))", r"\n\1", content)
@@ -270,16 +237,6 @@ def _normalize_toml_output(content: str) -> str:
 
 
 def _strip_delimiters(formatted: str, delimiter: str) -> str:
-    """Strip delimiters from formatted front matter.
-
-    Args:
-        formatted: Formatted front matter with delimiters.
-        delimiter: The delimiter string (e.g., '---' or '+++').
-
-    Returns:
-        Front matter with delimiters removed and trailing newlines stripped.
-
-    """
     formatted = formatted.removeprefix(f"{delimiter}\n")
 
     # Remove trailing delimiter with or without final newline
@@ -297,11 +254,6 @@ class FormatError(Exception):
     """Exception raised when formatting fails and original content should be returned."""
 
     def __init__(self, content: str) -> None:
-        """Initialize with original content to return.
-
-        Args:
-            content: Original content to return on formatting failure.
-        """
         super().__init__()
         self.content = content
 
@@ -313,22 +265,7 @@ def _handle_format_errors(
     *,
     strict: bool,
 ) -> Generator[None, None, None]:
-    """Handle errors during front matter formatting.
-
-    Args:
-        content: Original content to return if formatting fails.
-        format_type: Type of format being processed (e.g., 'YAML', 'TOML').
-        strict: If True, raise exceptions instead of preserving original.
-
-    Yields:
-        None
-
-    Raises:
-        FormatError: When formatting fails in non-strict mode (contains original content).
-        ValueError: Re-raised in strict mode from parsing/validation failures.
-        TypeError: Re-raised in strict mode from invalid content types.
-        AttributeError: Re-raised in strict mode from invalid content structure.
-    """
+    """Context manager: non-strict wraps errors in ``FormatError``; strict re-raises."""
     try:
         yield
     except (ValueError, TypeError, AttributeError) as e:
@@ -347,27 +284,17 @@ def _handle_format_errors(
 
 def _format_with_handler(
     content: str,
-    handler: Any,  # Handler instance  # noqa: ANN401
-    parse_func: Any,  # Parsing function (YAML().load, toml.loads, etc.)  # noqa: ANN401
+    handler: Any,  # noqa: ANN401
+    parse_func: Any,  # noqa: ANN401
     *,
     sort_keys: bool = True,
     normalize_mode: str = "none",
 ) -> str:
-    """Format front matter using a handler and parsing function.
-
-    Args:
-        content: Raw front matter content (without delimiters).
-        handler: Handler instance with export() method.
-        parse_func: Function to parse content (YAML().load, toml.loads, etc.).
-        sort_keys: Whether to sort keys in the front matter.
-        normalize_mode: Normalization level passed through to the handler.
-
-    Returns:
-        Formatted front matter (without delimiters).
+    """Parse ``content`` and export via ``handler``.
 
     Raises:
-        TypeError: When metadata is not a dictionary.
-        ValueError: When metadata contains no valid key-value pairs.
+        TypeError: metadata is not a dict.
+        ValueError: metadata parses to an empty dict from non-empty content.
     """
     metadata = parse_func(content)
 
@@ -389,16 +316,25 @@ def format_yaml(content: str, *, strict: bool = False, sort_keys: bool = True, n
 
     Args:
         content: Raw YAML string to format (without delimiters).
-        strict: If True, raise exceptions instead of preserving original.
-        sort_keys: If True, sort keys alphabetically.
-        normalize_mode: Normalization level — ``"none"`` preserves everything,
-            ``"minimal"`` strips unnecessary quotes and normalizes null/booleans,
-            ``"1.2"`` additionally upgrades YAML 1.1 boolean words (yes/no/on/off
-            and variants) to ``true``/``false``.
+        strict: Raise on parse/format errors instead of returning original.
+        sort_keys: Sort keys alphabetically.
+        normalize_mode: ``"none"`` round-trips everything unchanged; ``"minimal"``
+            strips unnecessary quotes, normalizes null and boolean casing;
+            ``"1.2"`` additionally converts unquoted YAML 1.1 boolean words
+            (``yes``/``no``/``on``/``off`` and variants) to ``true``/``false``.
 
     Returns:
-        Formatted YAML string (without delimiters), or original content if
-        formatting fails in non-strict mode.
+        Formatted YAML (without delimiters), or original on failure in non-strict mode.
+
+    Note:
+        ``"none"`` and ``"1.2"`` both load with ``preserve_quotes=True`` so the
+        loader wraps quoted scalars in ``DoubleQuotedScalarString`` /
+        ``SingleQuotedScalarString``. For ``"1.2"`` this lets the boolean upgrader
+        distinguish intentionally quoted ``"yes"`` (keep as string) from unquoted
+        ``yes`` (YAML 1.1 boolean → ``true``). For ``"none"`` the dumper also sets
+        ``preserve_quotes=True`` to honour that style on output. For ``"minimal"``
+        neither is set — all strings load as plain ``str`` and the dumper applies
+        minimal quoting.
     """
     try:
         with _handle_format_errors(content, "YAML", strict=strict):
