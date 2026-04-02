@@ -36,6 +36,14 @@ def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
             "By default, the original key order is preserved."
         ),
     )
+    group.add_argument(
+        "--wrap-front-matter",
+        action="store",
+        type=int,
+        metavar="N",
+        help=("Wrap front matter after N characters. Overrides --wrap."),
+    )
+
 
 def update_mdit(mdit: MarkdownIt) -> None:
     """Update the parser to recognize front matter blocks."""
@@ -67,9 +75,11 @@ def _render_front_matter(node: RenderTreeNode, context: RenderContext) -> str:
     # is stored as "sort_front_matter" in the options dict
     sort_keys = bool(get_conf(context.options, "sort_front_matter"))
     # Pass on linewrap instructions
-    wrap = get_conf(context.options, "wrap")
-    if isinstance(wrap, str):
-        wrap = None
+    wrap = get_conf(context.options, "wrap_front_matter")
+    if not isinstance(wrap, int):
+        wrap = get_conf(context.options, "wrap")
+        if isinstance(wrap, str):
+            wrap = None
 
     # Format the content based on type
     if format_type == "yaml":

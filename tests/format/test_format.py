@@ -41,7 +41,7 @@ def _extract_options_from_title(title: str) -> tuple[str, dict[str, object]]:
         except json.JSONDecodeError:
             return title, {}
         else:
-            return clean_title, {"plugin": {"front_matters": options}}
+            return clean_title, options
 
     # Check if entire title is JSON
     if title.strip().startswith("{") and title.strip().endswith("}"):
@@ -50,7 +50,7 @@ def _extract_options_from_title(title: str) -> tuple[str, dict[str, object]]:
         except json.JSONDecodeError:
             return title, {}
         else:
-            return title, {"plugin": {"front_matters": options}}
+            return title, options
 
     return title, {}  # No options found
 
@@ -78,8 +78,14 @@ fixtures = flatten(
     ids=[_extract_options_from_title(f[1])[0] for f in fixtures],
 )
 def test_format_fixtures(line, title, text, expected):
-    _clean_title, options = _extract_options_from_title(title)
-    output = mdformat.text(text, extensions={"front_matters"}, options=options or {})
+    _clean_title, raw_options = _extract_options_from_title(title)
+    options = {}
+    for key, val in raw_options.items():
+        if key.startswith("."):
+            options[key[1:]] = val
+        else:
+            options.setdefault("plugin", {}).setdefault("front_matters", {})[key] = val
+    output = mdformat.text(text, extensions={"front_matters"}, options=options)
 
     print_text(output, expected)
     assert output.rstrip() == expected.rstrip()

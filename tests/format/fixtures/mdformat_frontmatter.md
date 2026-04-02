@@ -129,14 +129,34 @@ stuff: stuff
 .
 
 YAML non-standard linewrap
-{"wrap": 40}
+{".wrap": 40}
 .
 ---
 somethingthatis: notsoreallyreallyreallylong
 ---
+This text is wrapped, too, since the wrap option applies to the entire document.
 .
 ---
 somethingthatis: 
   notsoreallyreallyreallylong
 ---
+
+This text is wrapped, too, since the
+wrap option applies to the entire
+document.
+.
+YAML non-standard linewrap but regular wrap
+{"wrap_front_matter": 40}
+.
+---
+somethingthatis: notsoreallyreallyreallylong
+---
+This text is not wrapped despite being more than forty characters.
+.
+---
+somethingthatis: 
+  notsoreallyreallyreallylong
+---
+
+This text is not wrapped despite being more than forty characters.
 .
