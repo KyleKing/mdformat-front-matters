@@ -37,7 +37,6 @@ def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
         ),
     )
 
-
 def update_mdit(mdit: MarkdownIt) -> None:
     """Update the parser to recognize front matter blocks."""
     mdit.use(front_matters_plugin)
@@ -67,10 +66,16 @@ def _render_front_matter(node: RenderTreeNode, context: RenderContext) -> str:
     # Note: argparse converts hyphens to underscores, so --sort-front-matter
     # is stored as "sort_front_matter" in the options dict
     sort_keys = bool(get_conf(context.options, "sort_front_matter"))
+    # Pass on linewrap instructions
+    wrap = get_conf(context.options, "wrap")
+    if isinstance(wrap, str):
+        wrap = None
 
     # Format the content based on type
     if format_type == "yaml":
-        formatted_content = format_yaml(content, strict=strict, sort_keys=sort_keys)
+        formatted_content = format_yaml(
+            content, strict=strict, sort_keys=sort_keys, wrap=wrap
+        )
     elif format_type == "toml":
         formatted_content = format_toml(content, strict=strict, sort_keys=sort_keys)
     elif format_type == "json":

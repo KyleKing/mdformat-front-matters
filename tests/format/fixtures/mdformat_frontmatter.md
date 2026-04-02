@@ -127,3 +127,16 @@ stuff: stuff
 stuff: stuff
 ---
 .
+
+YAML non-standard linewrap
+{"wrap": 40}
+.
+---
+somethingthatis: notsoreallyreallyreallylong
+---
+.
+---
+somethingthatis: 
+  notsoreallyreallyreallylong
+---
+.
