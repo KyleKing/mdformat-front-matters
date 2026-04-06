@@ -36,7 +36,7 @@ title: Test
 Content.
 .
 
-YAML null unchanged under none
+YAML null representation normalized (~ -> implicit) under none
 .
 ---
 key: ~

@@ -55,6 +55,10 @@ def _as_yaml12_bool(value: str) -> bool | None:
     return None
 
 
+def _represent_as_plain_str(dumper: _RoundTripRepresenter, data: object) -> ScalarNode:
+    return dumper.represent_str(str.__new__(str, data))
+
+
 class _NullNormalizingRepresenter(_RoundTripRepresenter):
     """Representer for normalize modes.
 
@@ -69,10 +73,6 @@ class _NullNormalizingRepresenter(_RoundTripRepresenter):
     block scalar styles (``|``, ``>``) are always preserved.
     ``None`` → ``null`` (not ``~``).
     """
-
-
-def _represent_as_plain_str(dumper: _NullNormalizingRepresenter, data: object) -> ScalarNode:
-    return dumper.represent_str(str.__new__(str, data))
 
 
 _NullNormalizingRepresenter.add_representer(
