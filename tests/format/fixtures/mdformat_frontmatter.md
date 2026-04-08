@@ -160,3 +160,18 @@ somethingthatis:
 
 This text is not wrapped despite being more than forty characters.
 .
+YAML linewrap only in content, not frontmatter
+{".wrap": 40, "wrap_front_matter": 0}
+.
+---
+somethingthatis: reallyreallyreallyreallylong
+---
+This text is being wrapped since the wrap option is used.
+.
+---
+somethingthatis: reallyreallyreallyreallylong
+---
+
+This text is being wrapped since the
+wrap option is used.
+.
