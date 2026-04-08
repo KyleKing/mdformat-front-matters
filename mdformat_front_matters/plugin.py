@@ -41,7 +41,10 @@ def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
         action="store",
         type=int,
         metavar="N",
-        help=("Wrap front matter after N characters. Overrides --wrap."),
+        help=(
+            "Wrap front matter after N characters. If set to 0, don't wrap. "
+            "Overrides --wrap. (Currently limited to YAML.)"
+        ),
     )
 
 
