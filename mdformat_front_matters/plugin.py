@@ -51,6 +51,16 @@ def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
             "Default: none (preserve original style)."
         ),
     )
+    group.add_argument(
+        "--wrap-front-matter",
+        action="store",
+        type=int,
+        metavar="N",
+        help=(
+            "Wrap front matter after N characters. If set to 0, don't wrap. "
+            "Overrides --wrap. (Currently limited to YAML.)"
+        ),
+    )
 
 
 def update_mdit(mdit: MarkdownIt) -> None:
@@ -74,16 +84,23 @@ def _render_front_matter(node: RenderTreeNode, context: RenderContext) -> str:
     content = node.content
     markup = node.markup
 
-    # Note: argparse converts hyphens to underscores (e.g. --strict-front-matter
-    # is stored as "strict_front_matter" in the options dict)
     strict = bool(get_conf(context.options, "strict_front_matter"))
     sort_keys = bool(get_conf(context.options, "sort_front_matter"))
+
     raw_normalize = get_conf(context.options, "normalize_front_matter")
     normalize_mode = str(raw_normalize) if raw_normalize is not None else "none"
 
+    wrap = get_conf(context.options, "wrap_front_matter")
+    if not isinstance(wrap, int):
+        wrap = get_conf(context.options, "wrap")
+        if isinstance(wrap, str):
+            wrap = None
+
     # Format the content based on type
     if format_type == "yaml":
-        formatted_content = format_yaml(content, strict=strict, sort_keys=sort_keys, normalize_mode=normalize_mode)
+        formatted_content = format_yaml(
+            content, strict=strict, sort_keys=sort_keys, normalize_mode=normalize_mode, wrap=wrap
+        )
     elif format_type == "toml":
         formatted_content = format_toml(content, strict=strict, sort_keys=sort_keys, normalize_mode=normalize_mode)
     elif format_type == "json":

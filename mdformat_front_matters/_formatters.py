@@ -103,7 +103,12 @@ class _RoundTripYAMLHandler:
             yaml.Representer = _NullNormalizingRepresenter
         yaml.default_flow_style = False
         yaml.allow_unicode = True
-        yaml.width = sys.maxsize
+        yaml.width = (
+            kwargs.pop("wrap", None) or sys.maxsize
+        )  # Prevent line wrapping by default
+
+        # Consistent indentation for previous mdformat-frontmatter users:
+        # https://github.com/butler54/mdformat-frontmatter/blob/93bb972b6044d22043d6c191a2e73858ff09d3e5/mdformat_frontmatter/plugin.py#L14
         yaml.indent(mapping=2, sequence=4, offset=2)
 
         if sort_keys:
@@ -289,13 +294,9 @@ def _format_with_handler(
     *,
     sort_keys: bool = True,
     normalize_mode: str = "none",
+    wrap: int | None = None,
 ) -> str:
-    """Parse ``content`` and export via ``handler``.
-
-    Raises:
-        TypeError: metadata is not a dict.
-        ValueError: metadata parses to an empty dict from non-empty content.
-    """
+    """Parse ``content`` and export via ``handler``."""
     metadata = parse_func(content)
 
     if not isinstance(metadata, dict):
@@ -308,20 +309,27 @@ def _format_with_handler(
         msg = "Front matter contains no valid key-value pairs"
         raise ValueError(msg)
 
-    return handler.export(metadata, sort_keys=sort_keys, normalize_mode=normalize_mode).strip()
+    return handler.export(metadata, sort_keys=sort_keys, normalize_mode=normalize_mode, wrap=wrap).strip()
 
 
-def format_yaml(content: str, *, strict: bool = False, sort_keys: bool = True, normalize_mode: str = "none") -> str:
+def format_yaml(
+    content: str,
+    *,
+    strict: bool = False,
+    sort_keys: bool = True,
+    normalize_mode: str = "none",
+    wrap: int | None = None,
     """Format YAML front matter content.
 
     Args:
         content: Raw YAML string to format (without delimiters).
-        strict: Raise on parse/format errors instead of returning original.
-        sort_keys: Sort keys alphabetically.
+        strict: If True, raise exceptions instead of preserving original.
+        sort_keys: If True, sort keys alphabetically.
         normalize_mode: ``"none"`` round-trips everything unchanged; ``"minimal"``
             strips unnecessary quotes, normalizes null and boolean casing;
             ``"1.2"`` additionally converts unquoted YAML 1.1 boolean words
             (``yes``/``no``/``on``/``off`` and variants) to ``true``/``false``.
+        wrap: Line length limit, if any.
 
     Returns:
         Formatted YAML (without delimiters), or original on failure in non-strict mode.
@@ -347,6 +355,7 @@ def format_yaml(content: str, *, strict: bool = False, sort_keys: bool = True, n
                 loader_yaml.load,
                 sort_keys=sort_keys,
                 normalize_mode=normalize_mode,
+                wrap=wrap,
             )
     except FormatError as err:
         return err.content
