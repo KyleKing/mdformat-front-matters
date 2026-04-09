@@ -37,6 +37,21 @@ def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
         ),
     )
     group.add_argument(
+        "--normalize-front-matter",
+        choices=["none", "minimal", "1.2"],
+        default=None,
+        metavar="{none,minimal,1.2}",
+        help=(
+            "Normalization level for front matter. "
+            "``minimal``: strips unnecessary YAML quotes, normalizes null (~ → null) "
+            "and boolean casing. "
+            "``1.2``: everything in minimal, plus upgrades YAML 1.1 boolean words "
+            "(yes/no/on/off and variants) to true/false. "
+            "TOML and JSON are unaffected. "
+            "Default: none (preserve original style)."
+        ),
+    )
+    group.add_argument(
         "--wrap-front-matter",
         action="store",
         type=int,
@@ -69,30 +84,34 @@ def _render_front_matter(node: RenderTreeNode, context: RenderContext) -> str:
     content = node.content
     markup = node.markup
 
-    # Check if strict mode is enabled
-    # Note: argparse converts hyphens to underscores, so --strict-front-matter
-    # is stored as "strict_front_matter" in the options dict
     strict = bool(get_conf(context.options, "strict_front_matter"))
-    # Check if sorting is enabled
-    # Note: argparse converts hyphens to underscores, so --sort-front-matter
-    # is stored as "sort_front_matter" in the options dict
     sort_keys = bool(get_conf(context.options, "sort_front_matter"))
-    # Pass on linewrap instructions
-    wrap = get_conf(context.options, "wrap_front_matter")
-    if not isinstance(wrap, int):
-        wrap = get_conf(context.options, "wrap")
-        if isinstance(wrap, str):
-            wrap = None
+
+    raw_normalize = get_conf(context.options, "normalize_front_matter")
+    normalize_mode = str(raw_normalize) if raw_normalize is not None else "none"
+
+    wrap: str | int | None = get_conf(context.options, "wrap_front_matter")
+    if wrap is None or isinstance(wrap, str):
+        raw = get_conf(context.options, "wrap")
+        wrap = raw if isinstance(raw, int) else None
 
     # Format the content based on type
     if format_type == "yaml":
         formatted_content = format_yaml(
-            content, strict=strict, sort_keys=sort_keys, wrap=wrap
+            content,
+            strict=strict,
+            sort_keys=sort_keys,
+            normalize_mode=normalize_mode,
+            wrap=wrap,
         )
     elif format_type == "toml":
-        formatted_content = format_toml(content, strict=strict, sort_keys=sort_keys)
+        formatted_content = format_toml(
+            content, strict=strict, sort_keys=sort_keys, normalize_mode=normalize_mode
+        )
     elif format_type == "json":
-        formatted_content = format_json(content, strict=strict, sort_keys=sort_keys)
+        formatted_content = format_json(
+            content, strict=strict, sort_keys=sort_keys, normalize_mode=normalize_mode
+        )
     else:
         # Unknown format, return as-is
         formatted_content = content

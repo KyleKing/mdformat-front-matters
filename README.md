@@ -13,7 +13,9 @@ An [mdformat](https://github.com/executablebooks/mdformat) plugin for normalizin
 
 - **Multi-format support**: Handles YAML (`---`), TOML (`+++`), and JSON (`{...}`) front matter
 - **Automatic normalization**: Formats front matter consistently (preserves key order by default, standardized indentation)
+- **Quote preservation**: YAML string quotes (`"double"`, `'single'`, `|` block literal, `>` block folded) are preserved by default
 - **Configurable sorting**: Option to sort keys alphabetically with `--sort-front-matter`
+- **YAML normalization modes**: `--normalize-front-matter {none,minimal,1.2}` — from style-only cleanup to full YAML 1.1 → 1.2 upgrade
 - **Error resilient**: Preserves original content if parsing fails. Will error only if `strict` mode is set
 - **Zero configuration**: Works out of the box with mdformat
 
@@ -90,7 +92,7 @@ repos:
 ### uvx
 
 ```sh
-uvx --with mdformat-front-matters mdformat
+uvx --with=mdformat-front-matters mdformat
 ```
 
 Or with pipx:
@@ -101,6 +103,8 @@ pipx inject mdformat mdformat-front-matters
 ```
 
 ### Configuration Options
+
+All options are independent and composable — use any combination.
 
 #### Key Sorting
 
@@ -113,6 +117,65 @@ mdformat document.md
 # Sort keys alphabetically
 mdformat document.md --sort-front-matter
 ```
+
+#### YAML Normalization Modes
+
+Use `--normalize-front-matter` to apply progressively more opinionated YAML normalization. The flag accepts one of three values:
+
+| Mode             | What changes                                                 |
+| ---------------- | ------------------------------------------------------------ |
+| `none` (default) | Nothing — full round-trip, all styles preserved              |
+| `minimal`        | Strip unnecessary quotes + null normalization + boolean case |
+| `1.2`            | Everything in `minimal` + YAML 1.1 boolean word upgrade      |
+
+```sh
+# Default — preserve everything
+mdformat document.md
+
+# Strip quotes, normalize null and boolean casing
+mdformat document.md --normalize-front-matter minimal
+
+# Everything in minimal, plus upgrade YAML 1.1 boolean words
+mdformat document.md --normalize-front-matter 1.2
+```
+
+**`minimal` example:**
+
+```yaml
+# Before
+---
+title: "My Post"
+draft: True
+empty: ~
+---
+
+# After --normalize-front-matter minimal
+---
+title: My Post
+draft: true
+empty: null
+---
+```
+
+**`1.2` example** (additionally converts YAML 1.1 boolean words):
+
+```yaml
+# Before
+---
+draft: yes
+published: no
+label: "yes"
+---
+
+# After --normalize-front-matter 1.2
+---
+draft: true
+published: false
+label: yes
+---
+```
+
+Quotes that are semantically necessary are always preserved — values containing colons, empty strings, etc. Block scalar styles (`|` and `>`) are always preserved. Quoted `"yes"` or `'no'` remain as strings; only unquoted `yes`/`no`/`on`/`off` (and their capitalised variants) are treated as YAML 1.1 booleans. TOML and JSON are unaffected.
 
 #### Strict Mode
 
@@ -139,6 +202,29 @@ repos:
         args: [--strict-front-matter]
         additional_dependencies:
           - mdformat-front-matters
+```
+
+#### Configuration File
+
+All options can be set in `.mdformat.toml` instead of passing CLI flags:
+
+```toml
+[plugin.front_matters]
+sort_front_matter = true
+normalize_front_matter = "minimal"  # or "1.2" or "none"
+strict_front_matter = true
+```
+
+Or via the Python API:
+
+```python
+import mdformat
+
+mdformat.text(
+    content,
+    extensions={"front_matters"},
+    options={"plugin": {"front_matters": {"normalize_front_matter": "minimal"}}},
+)
 ```
 
 ## HTML Rendering
