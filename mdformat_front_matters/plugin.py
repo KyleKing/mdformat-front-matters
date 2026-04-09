@@ -36,6 +36,16 @@ def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
             "By default, the original key order is preserved."
         ),
     )
+    group.add_argument(
+        "--wrap-front-matter",
+        action="store",
+        type=int,
+        metavar="N",
+        help=(
+            "Wrap front matter after N characters. If set to 0, don't wrap. "
+            "Overrides --wrap. (Currently limited to YAML.)"
+        ),
+    )
 
 
 def update_mdit(mdit: MarkdownIt) -> None:
@@ -67,10 +77,18 @@ def _render_front_matter(node: RenderTreeNode, context: RenderContext) -> str:
     # Note: argparse converts hyphens to underscores, so --sort-front-matter
     # is stored as "sort_front_matter" in the options dict
     sort_keys = bool(get_conf(context.options, "sort_front_matter"))
+    # Pass on linewrap instructions
+    wrap = get_conf(context.options, "wrap_front_matter")
+    if not isinstance(wrap, int):
+        wrap = get_conf(context.options, "wrap")
+        if isinstance(wrap, str):
+            wrap = None
 
     # Format the content based on type
     if format_type == "yaml":
-        formatted_content = format_yaml(content, strict=strict, sort_keys=sort_keys)
+        formatted_content = format_yaml(
+            content, strict=strict, sort_keys=sort_keys, wrap=wrap
+        )
     elif format_type == "toml":
         formatted_content = format_toml(content, strict=strict, sort_keys=sort_keys)
     elif format_type == "json":

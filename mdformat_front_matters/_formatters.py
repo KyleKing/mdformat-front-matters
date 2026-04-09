@@ -64,7 +64,9 @@ class _UnicodePreservingYAMLHandler:
         yaml.preserve_quotes = True
         yaml.default_flow_style = False
         yaml.allow_unicode = True
-        yaml.width = sys.maxsize  # Prevent line wrapping
+        yaml.width = (
+            kwargs.pop("wrap", None) or sys.maxsize
+        )  # Prevent line wrapping by default
 
         # Consistent indentation for previous mdformat-frontmatter users:
         # https://github.com/butler54/mdformat-frontmatter/blob/93bb972b6044d22043d6c191a2e73858ff09d3e5/mdformat_frontmatter/plugin.py#L14
@@ -251,6 +253,7 @@ def _format_with_handler(
     parse_func: Any,  # Parsing function (YAML().load, toml.loads, etc.)  # noqa: ANN401
     *,
     sort_keys: bool = True,
+    wrap: int | None = None,
 ) -> str:
     """Format front matter using a handler and parsing function.
 
@@ -259,6 +262,7 @@ def _format_with_handler(
         handler: Handler instance with export() method.
         parse_func: Function to parse content (YAML().load, toml.loads, etc.).
         sort_keys: Whether to sort keys in the front matter.
+        wrap: Line length limit, if any.
 
     Returns:
         Formatted front matter (without delimiters).
@@ -285,16 +289,23 @@ def _format_with_handler(
         msg = "Front matter contains no valid key-value pairs"
         raise ValueError(msg)
 
-    return handler.export(metadata, sort_keys=sort_keys).strip()
+    return handler.export(metadata, sort_keys=sort_keys, wrap=wrap).strip()
 
 
-def format_yaml(content: str, *, strict: bool = False, sort_keys: bool = True) -> str:
+def format_yaml(
+    content: str,
+    *,
+    strict: bool = False,
+    sort_keys: bool = True,
+    wrap: int | None = None,
+) -> str:
     """Format YAML front matter content.
 
     Args:
         content: Raw YAML string to format (without delimiters).
         strict: If True, raise exceptions instead of preserving original.
         sort_keys: If True, sort keys alphabetically.
+        wrap: Line length limit, if any.
 
     Returns:
         Formatted YAML string (without delimiters), or original content if
@@ -309,6 +320,7 @@ def format_yaml(content: str, *, strict: bool = False, sort_keys: bool = True) -
                 _UnicodePreservingYAMLHandler(),
                 yaml.load,
                 sort_keys=sort_keys,
+                wrap=wrap,
             )
     except FormatError as e:
         return e.content

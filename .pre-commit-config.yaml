@@ -24,7 +24,7 @@ repos:
       - id: pretty-format-json
         args: [--autofix, --indent=4]
       - id: trailing-whitespace
-        exclude: __snapshots__/.*\.ambr
+        exclude: __snapshots__/.*\.ambr|tests/format/fixtures/mdformat_frontmatter\.md
   - repo: https://github.com/executablebooks/mdformat
     rev: 1.0.0
     hooks:
