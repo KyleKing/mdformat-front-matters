@@ -99,12 +99,20 @@ def _render_front_matter(node: RenderTreeNode, context: RenderContext) -> str:
     # Format the content based on type
     if format_type == "yaml":
         formatted_content = format_yaml(
-            content, strict=strict, sort_keys=sort_keys, normalize_mode=normalize_mode, wrap=wrap
+            content,
+            strict=strict,
+            sort_keys=sort_keys,
+            normalize_mode=normalize_mode,
+            wrap=wrap,
         )
     elif format_type == "toml":
-        formatted_content = format_toml(content, strict=strict, sort_keys=sort_keys, normalize_mode=normalize_mode)
+        formatted_content = format_toml(
+            content, strict=strict, sort_keys=sort_keys, normalize_mode=normalize_mode
+        )
     elif format_type == "json":
-        formatted_content = format_json(content, strict=strict, sort_keys=sort_keys, normalize_mode=normalize_mode)
+        formatted_content = format_json(
+            content, strict=strict, sort_keys=sort_keys, normalize_mode=normalize_mode
+        )
     else:
         # Unknown format, return as-is
         formatted_content = content

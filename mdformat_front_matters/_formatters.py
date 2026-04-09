@@ -43,8 +43,12 @@ SPECIAL_YAML_CHARS = {
 }
 """These characters require quoting: : { } [ ] , & * # ? | - < > = ! % @ `."""
 
-_YAML11_TRUE_WORDS: frozenset[str] = frozenset({"y", "Y", "yes", "Yes", "YES", "on", "On", "ON"})
-_YAML11_FALSE_WORDS: frozenset[str] = frozenset({"n", "N", "no", "No", "NO", "off", "Off", "OFF"})
+_YAML11_TRUE_WORDS: frozenset[str] = frozenset(
+    {"y", "Y", "yes", "Yes", "YES", "on", "On", "ON"}
+)
+_YAML11_FALSE_WORDS: frozenset[str] = frozenset(
+    {"n", "N", "no", "No", "NO", "off", "Off", "OFF"}
+)
 
 
 def _as_yaml12_bool(value: str) -> bool | None:
@@ -79,8 +83,12 @@ _NullNormalizingRepresenter.add_representer(
     type(None),
     lambda d, _: d.represent_scalar("tag:yaml.org,2002:null", "null"),
 )
-_NullNormalizingRepresenter.add_representer(SingleQuotedScalarString, _represent_as_plain_str)
-_NullNormalizingRepresenter.add_representer(DoubleQuotedScalarString, _represent_as_plain_str)
+_NullNormalizingRepresenter.add_representer(
+    SingleQuotedScalarString, _represent_as_plain_str
+)
+_NullNormalizingRepresenter.add_representer(
+    DoubleQuotedScalarString, _represent_as_plain_str
+)
 
 
 class _RoundTripYAMLHandler:
@@ -103,9 +111,8 @@ class _RoundTripYAMLHandler:
             yaml.Representer = _NullNormalizingRepresenter
         yaml.default_flow_style = False
         yaml.allow_unicode = True
-        yaml.width = (
-            kwargs.pop("wrap", None) or sys.maxsize
-        )  # Prevent line wrapping by default
+        wrap_val: int | None = kwargs.pop("wrap", None)  # type: ignore[assignment]
+        yaml.width = wrap_val or sys.maxsize  # Prevent line wrapping by default
 
         # Consistent indentation for previous mdformat-frontmatter users:
         # https://github.com/butler54/mdformat-frontmatter/blob/93bb972b6044d22043d6c191a2e73858ff09d3e5/mdformat_frontmatter/plugin.py#L14
@@ -309,7 +316,9 @@ def _format_with_handler(
         msg = "Front matter contains no valid key-value pairs"
         raise ValueError(msg)
 
-    return handler.export(metadata, sort_keys=sort_keys, normalize_mode=normalize_mode, wrap=wrap).strip()
+    return handler.export(
+        metadata, sort_keys=sort_keys, normalize_mode=normalize_mode, wrap=wrap
+    ).strip()
 
 
 def format_yaml(
@@ -319,6 +328,7 @@ def format_yaml(
     sort_keys: bool = True,
     normalize_mode: str = "none",
     wrap: int | None = None,
+) -> str:
     """Format YAML front matter content.
 
     Args:
@@ -361,7 +371,13 @@ def format_yaml(
         return err.content
 
 
-def format_toml(content: str, *, strict: bool = False, sort_keys: bool = True, normalize_mode: str = "none") -> str:
+def format_toml(
+    content: str,
+    *,
+    strict: bool = False,
+    sort_keys: bool = True,
+    normalize_mode: str = "none",
+) -> str:
     """Format TOML front matter content.
 
     Args:
@@ -389,7 +405,13 @@ def format_toml(content: str, *, strict: bool = False, sort_keys: bool = True, n
         return err.content
 
 
-def format_json(content: str, *, strict: bool = False, sort_keys: bool = True, normalize_mode: str = "none") -> str:
+def format_json(
+    content: str,
+    *,
+    strict: bool = False,
+    sort_keys: bool = True,
+    normalize_mode: str = "none",
+) -> str:
     """Format JSON front matter content.
 
     Args:
