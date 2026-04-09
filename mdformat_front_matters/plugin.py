@@ -90,11 +90,10 @@ def _render_front_matter(node: RenderTreeNode, context: RenderContext) -> str:
     raw_normalize = get_conf(context.options, "normalize_front_matter")
     normalize_mode = str(raw_normalize) if raw_normalize is not None else "none"
 
-    wrap = get_conf(context.options, "wrap_front_matter")
-    if not isinstance(wrap, int):
-        wrap = get_conf(context.options, "wrap")
-        if isinstance(wrap, str):
-            wrap = None
+    wrap: str | int | None = get_conf(context.options, "wrap_front_matter")
+    if wrap is None or isinstance(wrap, str):
+        raw = get_conf(context.options, "wrap")
+        wrap = raw if isinstance(raw, int) else None
 
     # Format the content based on type
     if format_type == "yaml":
