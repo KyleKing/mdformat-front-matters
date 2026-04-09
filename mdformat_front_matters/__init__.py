@@ -1,4 +1,3 @@
-# ruff: noqa: RUF067
 """An mdformat plugin for `front_matters`."""
 
 __version__ = "2.0.0"

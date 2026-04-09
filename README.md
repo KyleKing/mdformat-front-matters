@@ -92,7 +92,7 @@ repos:
 ### uvx
 
 ```sh
-uvx --with mdformat-front-matters mdformat
+uvx --with=mdformat-front-matters mdformat
 ```
 
 Or with pipx:
