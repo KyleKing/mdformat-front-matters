@@ -1,4 +1,34 @@
 {
     "$comment": "Not overwritten by 'copier update' once this file exists (see canary.py's module docstring for how to add an entry, and copier.yml's '_skip_if_exists').",
-    "repos": []
+    "repos": [
+        {
+            "name": "starsep.github.io",
+            "options": {
+                "plugin": {
+                    "front_matters": {
+                        "sort_front_matter": true
+                    }
+                }
+            },
+            "patterns": [
+                "content/**/*.md"
+            ],
+            "url": "https://github.com/starsep/starsep.github.io"
+        },
+        {
+            "name": "wazootech-wiki",
+            "patterns": [
+                "docs/wiki/**/*.md"
+            ],
+            "url": "https://github.com/wazootech/wiki"
+        },
+        {
+            "$comment": "Scoped to 'documentation': the generated 'themes' pages open with a blank line before '+++', so their front matter is only parsed once mdformat strips it.",
+            "name": "zola",
+            "patterns": [
+                "docs/content/documentation/**/*.md"
+            ],
+            "url": "https://github.com/getzola/zola"
+        }
+    ]
 }
