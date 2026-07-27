@@ -61,6 +61,8 @@ fixtures = flatten(
         for fixture_path in (
             "front_matters.md",
             "comment_preservation.md",
+            "normalization.md",
+            "quote_preservation.md",
             "sorting.md",
             # From: https://gohugo.io/content-management/front-matter
             "hugo.md",

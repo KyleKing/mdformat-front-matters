@@ -53,12 +53,15 @@ prek run --all
 ptw .
 ```
 
-## Local uv/pipx integration testing
+## Local uv/pipx integration testing — for testing only
+
+> [!WARNING]
+> Do not use uv commands for regular development. AGENTS.md requires using tox for all development tasks because there is no uv.lock file. This section is only for ephemeral/CI integration testing.
 
 Run the local code with `uv tool` (requires `uv` installed globally and first in `$PATH`, e.g. `brew install uv` or `mise use uv --global`)
 
 ```sh
-uv tool install 'mdformat>=0.7.19' --force --with=.
+uv tool install --force --with=. 'mdformat>=0.7.19'
 
 # Then navigate to a different directory and check that the editable version was installed
 cd ~
