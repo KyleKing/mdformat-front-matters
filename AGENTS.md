@@ -101,6 +101,8 @@ Option semantics:
 - `normalize_front_matter`: YAML only — `"none"` (default) preserves everything; `"minimal"` strips unnecessary quotes, normalizes null (`~` → `null`) and boolean case; `"1.2"` additionally upgrades unquoted YAML 1.1 boolean words (`yes`/`no`/`on`/`off`) to `true`/`false`
 - `strict_front_matter`: Raise on invalid front matter instead of preserving it (default: preserve original content on error)
 
+Boolean flags in `add_cli_argument_group` must use `action="store_const", const=True` (default `None`), never `action="store_true"` (default `False`). `get_conf()` treats a present-but-`False` value the same as an explicit user choice, so a `store_true` default silently overrides `cli_argument = true` set in `.mdformat.toml` whenever the CLI flag isn't passed. `mdformat`'s own CLI builder detects this and raises a `DeprecationWarning` for any plugin flag whose default isn't `None` or `argparse.SUPPRESS`.
+
 ### Testing Strategy
 
 **Snapshot Testing**

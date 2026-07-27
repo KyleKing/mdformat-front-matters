@@ -43,7 +43,7 @@ def _render_front_matter_html(
     _idx: int,
     _options: dict[str, Any],
     _env: dict[str, Any],
-    _renderer: Any,  # markdown-it renderer type not well-defined  # noqa: ANN401
+    _renderer: Any,  # markdown-it renderer type not well-defined  # ruff: ignore[any-type]
 ) -> str:
     """Render front matter token to HTML (returns empty string).
 
@@ -62,7 +62,7 @@ def _render_front_matter_html(
     return ""
 
 
-def _front_matter_rule(  # noqa: C901, PLR0914
+def _front_matter_rule(  # ruff: ignore[complex-structure, too-many-locals]
     state: StateBlock,
     start_line: int,
     end_line: int,

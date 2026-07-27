@@ -86,7 +86,7 @@ def test_large_yaml_performance(large_yaml_document):
     assert "# Content" in result
     assert "data:" in result
     # Should format in under 2 seconds
-    timer.assert_(2.0)  # noqa: PT009
+    timer.assert_(2.0)  # ruff: ignore[pytest-unittest-assertion]
 
 
 def test_large_toml_performance(large_toml_document):
@@ -97,7 +97,7 @@ def test_large_toml_performance(large_toml_document):
     assert result is not None
     assert "# Content" in result
     # Should format in under 2 seconds
-    timer.assert_(2.0)  # noqa: PT009
+    timer.assert_(2.0)  # ruff: ignore[pytest-unittest-assertion]
 
 
 def test_deeply_nested_yaml_performance(deeply_nested_yaml):
@@ -108,7 +108,7 @@ def test_deeply_nested_yaml_performance(deeply_nested_yaml):
     assert result is not None
     assert "# Content" in result
     # Should format in under 1 second
-    timer.assert_(1.0)  # noqa: PT009
+    timer.assert_(1.0)  # ruff: ignore[pytest-unittest-assertion]
 
 
 def test_multiple_documents_performance():
@@ -132,7 +132,7 @@ tags:
             assert result is not None
 
     # 100 documents should format in under 3 seconds
-    timer.assert_(3.0)  # noqa: PT009
+    timer.assert_(3.0)  # ruff: ignore[pytest-unittest-assertion]
 
 
 @pytest.mark.parametrize("count", [10, 100, 500])
@@ -150,7 +150,7 @@ items: [{items}]
 
     assert result is not None
     # Should complete in under 1 second even for 500 items
-    timer.assert_(1.0)  # noqa: PT009
+    timer.assert_(1.0)  # ruff: ignore[pytest-unittest-assertion]
 
 
 def test_json_performance():
@@ -168,7 +168,7 @@ def test_json_performance():
     assert result is not None
     assert "# Content" in result
     # Should format in under 1 second
-    timer.assert_(1.0)  # noqa: PT009
+    timer.assert_(1.0)  # ruff: ignore[pytest-unittest-assertion]
 
 
 def test_empty_document_performance():
@@ -180,4 +180,4 @@ def test_empty_document_performance():
             assert result is not None
 
     # 1000 iterations should complete in under 2 seconds
-    timer.assert_(2.0)  # noqa: PT009
+    timer.assert_(2.0)  # ruff: ignore[pytest-unittest-assertion]

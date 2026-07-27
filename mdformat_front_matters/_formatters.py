@@ -188,7 +188,7 @@ class _RoundTripYAMLHandler:
 class _SortingTOMLHandler:
     """Custom TOML handler that supports key sorting."""
 
-    def export(self, metadata: dict[str, object], **kwargs: object) -> str:  # noqa: PLR6301
+    def export(self, metadata: dict[str, object], **kwargs: object) -> str:  # ruff: ignore[no-self-use]
         """Export metadata as TOML with optional key sorting.
 
         Args:
@@ -212,7 +212,7 @@ class _SortingTOMLHandler:
 class _SortingJSONHandler:
     """Custom JSON handler that supports key sorting."""
 
-    def export(self, metadata: dict[str, object], **kwargs: object) -> str:  # noqa: PLR6301
+    def export(self, metadata: dict[str, object], **kwargs: object) -> str:  # ruff: ignore[no-self-use]
         """Export metadata as JSON with optional key sorting.
 
         Args:
@@ -296,8 +296,8 @@ def _handle_format_errors(
 
 def _format_with_handler(
     content: str,
-    handler: Any,  # noqa: ANN401
-    parse_func: Any,  # noqa: ANN401
+    handler: Any,  # ruff: ignore[any-type]
+    parse_func: Any,  # ruff: ignore[any-type]
     *,
     sort_keys: bool = True,
     normalize_mode: str = "none",
