@@ -175,7 +175,10 @@ label: yes
 ---
 ```
 
-Quotes that are semantically necessary are always preserved — values containing colons, empty strings, etc. Block scalar styles (`|` and `>`) are always preserved. Quoted `"yes"` or `'no'` remain as strings; only unquoted `yes`/`no`/`on`/`off` (and their capitalised variants) are treated as YAML 1.1 booleans. TOML and JSON are unaffected.
+> [!NOTE]
+> In the example above, `label: "yes"` becomes `label: yes` — the value is treated as the string "yes" (not a boolean), and the optional quotes are removed during normalization.
+
+Semantically necessary quotes are always preserved (values containing colons, empty strings, etc.). Block scalar styles (`|` and `>`) are always preserved. Quoted values like `"yes"` or `'no'` retain their string semantics. Optional surrounding quotes may be removed during normalization, but the value remains a string (not a boolean). Only unquoted `yes`/`no`/`on`/`off` (and capitalized variants) are treated as YAML 1.1 booleans. TOML and JSON are unaffected.
 
 #### Strict Mode
 

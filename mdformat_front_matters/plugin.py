@@ -88,12 +88,18 @@ def _render_front_matter(node: RenderTreeNode, context: RenderContext) -> str:
     sort_keys = bool(get_conf(context.options, "sort_front_matter"))
 
     raw_normalize = get_conf(context.options, "normalize_front_matter")
+    if raw_normalize is not None and raw_normalize not in {"none", "minimal", "1.2"}:
+        msg = (
+            f"Invalid normalize_front_matter value: {raw_normalize!r}. "
+            "Allowed values are: 'none', 'minimal', '1.2'"
+        )
+        raise ValueError(msg)
     normalize_mode = str(raw_normalize) if raw_normalize is not None else "none"
 
     wrap: str | int | None = get_conf(context.options, "wrap_front_matter")
     if wrap is None or isinstance(wrap, str):
         raw = get_conf(context.options, "wrap")
-        wrap = raw if isinstance(raw, int) else None
+        wrap = raw if type(raw) is int and raw > 0 else None
 
     # Format the content based on type
     if format_type == "yaml":

@@ -51,7 +51,7 @@ tox -e hook-min
 tox devenv .venv
 
 # Test mdformat on inline content
-echo '- \[test\]: value' | .venv/bin/mdformat - --extension front_matters 2>&1
+echo '- [test]: value' | .venv/bin/mdformat - --extension front_matters 2>&1
 
 # Test mdformat on a specific file
 .venv/bin/mdformat tests/pre-commit-test.md --extension front_matters
@@ -59,7 +59,7 @@ echo '- \[test\]: value' | .venv/bin/mdformat - --extension front_matters 2>&1
 # Run Python code with local package installed
 .venv/bin/python3 << 'PYTHON'
 import mdformat
-output = mdformat.text("- \[test\]: value", extensions={"front_matters"})
+output = mdformat.text("- [test]: value", extensions={"front_matters"})
 print(output)
 PYTHON
 ```
