@@ -1,0 +1,17 @@
+# Freshen WIP handoff
+
+## 2026-08-01
+
+Stashed as: `freshen 672bb50f: pre-existing WIP` (not applied, not dropped)
+
+Stashed files:
+
+- doing.txt — carries four notes from the 2026-07-26 pass. Two are closed: the
+  _literal_prefix control-escape fix landed upstream in template 2.9.3 (the
+  local test file now decodes \n rather than treating \x as literal x), and
+  scripts/canary_repos.json is populated with three downstream repos that all
+  pass. Two are still open, and the release one is the bigger of the pair:
+  222d29a ("feat: add --normalize-front-matter") is in main but in no tag, so
+  the feature is unreleased and `tox -e cz bump` would cut 2.2.0. Next step:
+  reopen the stash, drop the two settled entries, and keep the tox 4.32 pin
+  question plus the pending release.
