@@ -75,7 +75,7 @@ tags = ["example", "demo"]
 
 ## `mdformat` Usage
 
-Add this package wherever you use `mdformat` and the plugin will be auto-recognized. No additional configuration necessary. See [additional information on `mdformat` plugins here](https://mdformat.readthedocs.io/en/stable/users/plugins.html)
+Add this package wherever you use `mdformat`; it auto-recognizes the plugin, no configuration needed. See [more on `mdformat` plugins](https://mdformat.readthedocs.io/en/stable/users/plugins.html)
 
 ### pre-commit / prek
 
@@ -232,7 +232,7 @@ mdformat.text(
 
 ## HTML Rendering
 
-To hide Front Matter from generated HTML output, `front_matters_plugin` can be imported from `mdit_plugins`. For more guidance on `MarkdownIt`, see the docs: <https://markdown-it-py.readthedocs.io/en/latest/using.html#the-parser>
+To hide Front Matter from generated HTML output, import `front_matters_plugin` from `mdit_plugins`. For more on `MarkdownIt`, see the docs: <https://markdown-it-py.readthedocs.io/en/latest/using.html#the-parser>
 
 ```py
 from markdown_it import MarkdownIt
